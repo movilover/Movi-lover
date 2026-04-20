@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Movie Lover - Ultimate Pro</title>
+  
+  <script src="//libtl.com/sdk.js" data-zone="10799185" data-sdk="show_10799185"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Poppins', sans-serif; background: #050505; color: #fff; overflow-x: hidden; }
+
+    /* Fast Loader */
+    #preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: 0.3s; }
+    .loader-spin { width: 45px; height: 45px; border: 4px solid rgba(255, 0, 0, 0.1); border-top: 4px solid #ff0000; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    .loader-text { margin-top: 15px; font-size: 18px; font-weight: 800; letter-spacing: 3px; color: #fff; text-transform: uppercase; }
+    .loader-text span { color: #ff0000; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Header */
+    .header { background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #1a1a1a; }
+    .header-left h1 { font-size: 15px; font-weight: 800; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+    .user-stats { background: linear-gradient(45deg, #ff0000, #b30000); padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); }
+    
+    /* Notice Box */
+    .notice-box { background: #0a0a0a; border-bottom: 1px solid #1a1a1a; overflow: hidden; white-space: nowrap; padding: 10px 0; }
+    .notice-text { display: inline-block; padding-left: 100%; animation: marquee 18s linear infinite; color: #ffeb3b; font-size: 11px; font-weight: 500; }
+    @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+
+    /* Premium Search Style */
+    .search-container { padding: 18px 15px 8px; }
+    .search-wrapper { position: relative; width: 100%; }
+    .search-wrapper i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px; }
+    .search-bar { width: 100%; padding: 14px 15px 14px 48px; border-radius: 18px; background: linear-gradient(145deg, #0f0f0f, #181818); border: 1px solid #252525; color: #fff; outline: none; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .search-bar:focus { border-color: #ff0000; box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+    
+    /* Categories */
+    .category-bar { display: flex; gap: 10px; padding: 12px 15px; overflow-x: auto; scrollbar-width: none; }
+    .cat-chip { padding: 8px 22px; background: #121212; border-radius: 30px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #222; white-space: nowrap; color: #999; transition: 0.3s; }
+    .cat-chip.active { background: #ff0000; color: #fff; border-color: #ff0000; box-shadow: 0 4px 12px rgba(255,0,0,0.3); }
+
+    /* Video Grid */
+    .video-grid { padding: 10px 12px 100px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .video-card { background: #0d0d0d; border-radius: 18px; overflow: hidden; border: 1px solid #1a1a1a; transition: 0.3s; }
+    .video-card img { width: 100%; height: 110px; object-fit: contain; background: #000; }
+    .video-title { padding: 12px; font-size: 11px; font-weight: 500; height: 45px; color: #eee; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+    /* Premium Telegram Button */
+    .tg-float { position: fixed; bottom: 25px; right: 20px; width: 55px; height: 55px; background: linear-gradient(135deg, #0088cc, #00aaff); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; z-index: 1500; box-shadow: 0 8px 20px rgba(0,136,204,0.4); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    /* Modal Styles */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: none; align-items: center; justify-content: center; z-index: 2000; }
+    .modal-content { background: #141414; width: 88%; max-width: 350px; border-radius: 25px; padding: 25px; text-align: center; border: 1px solid #2a2a2a; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+    .btn-premium { width: 100%; padding: 15px; border: none; border-radius: 15px; font-weight: 800; margin-top: 12px; cursor: pointer; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; transition: 0.3s; }
+
+    /* Admin Styles */
+    .admin-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; padding: 20px; overflow-y: auto; display: none; }
+    .admin-card { background: #0d0d0d; padding: 18px; border-radius: 15px; border: 1px solid #222; margin-bottom: 15px; }
+    .admin-input { width: 100%; padding: 13px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; font-size: 12px; outline: none; }
+    .btn-del { color: #ff3d00; background: none; border: 1px solid #ff3d00; padding: 4px 10px; border-radius: 6px; font-size: 10px; }
+  </style>
+</head>
+<body>
+
+  <div id="preloader">
+    <div class="loader-spin"></div>
+    <div class="loader-text">MOVIE<span>LOVER</span></div>
+  </div>
+
+  <div class="header">
+    <div id="adminTrigger"><h1>MOVIE<span style="color:red;">LOVER</span></h1></div>
+    <div class="user-stats" id="pointDisplay">Points: 0</div>
+  </div>
+
+  <div class="notice-box">
+    <div class="notice-text">টাস্ক সম্পন্ন করে ভিডিও আনলক করুন। মুভি ওপেন হওয়ার সময় অ্যাড আসলে ব্যাক বাটনে ক্লিক করুন।</div>
+  </div>
+
+  <div class="search-container">
+    <div class="search-wrapper">
+      <i class="fa fa-search"></i>
+      <input type="text" id="searchInput" class="search-bar" placeholder="এখানে মুভি খুঁজুন..." oninput="searchVideos()">
+    </div>
+  </div>
+
+  <div class="category-bar" id="categoryBar"></div>
+  <div class="video-grid" id="videoList"></div>
+
+  <a href="#" id="tgFloatingBtn" class="tg-float" target="_blank">
+    <i class="fab fa-telegram-plane"></i>
+  </a>
+
+  <div class="modal" id="optionsModal">
+    <div class="modal-content">
+      <img id="modalThumb" style="width:100%; height:170px; object-fit:contain; background:#000; border-radius:15px; margin-bottom:10px; border: 1px solid #222;">
+      <h3 id="modalTitle" style="font-size: 15px; margin-bottom: 20px; line-height: 1.4;"></h3>
+      <button id="watchAdBtn" class="btn-premium" style="background: linear-gradient(to right, #ff0000, #990000); color: #fff; box-shadow: 0 5px 15px rgba(255,0,0,0.3);">START AD TASK (0/3)</button>
+      <button id="playNowBtn" class="btn-premium" style="background: linear-gradient(to right, #00c853, #007e33); color: #fff; display: none; box-shadow: 0 5px 15px rgba(0,200,83,0.3);">▶ PLAY NOW</button>
+      <button onclick="closeModal()" style="background: none; border: none; color: #555; margin-top: 15px; cursor: pointer; font-weight: 600; font-size: 11px;">CLOSE</button>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div id="loginArea" class="admin-card">
+      <h2 style="text-align:center; color:red; margin-bottom:20px; font-size:20px;">Admin Login</h2>
+      <input type="password" id="adminPass" class="admin-input" placeholder="Enter PIN">
+      <button onclick="loginAdmin()" class="btn-premium" style="background:red; color:#fff;">Login</button>
+      <button onclick="closeAdmin()" class="btn-premium" style="background:#222; color:#fff;">Close</button>
+    </div>
+    
+    <div id="adminContent" style="display:none;">
+      <div class="admin-card">
+        <h3>Monetag Direct Link</h3>
+        <input id="directLinkInput" class="admin-input" placeholder="Paste Direct Link">
+        <button onclick="saveDirectLink()" class="btn-premium" style="background:#ff0080; color:#fff;">Update Ad Link</button>
+      </div>
+
+      <div class="admin-card">
+        <h3>Core Settings</h3>
+        <input id="tgLinkInput" class="admin-input" placeholder="Telegram Link">
+        <button onclick="saveTgLink()" class="btn-premium" style="background:#0088cc; color:#fff;">Update TG</button>
+        <hr style="margin: 15px 0; border: 0.5px solid #222;">
+        <input id="newCatInput" class="admin-input" placeholder="New Category Name">
+        <button onclick="addCategory()" class="btn-premium" style="background:#ff9800; color:#fff;">Add Cat</button>
+        <div id="adminCategoryList" style="margin-top:12px;"></div>
+      </div>
+      
+      <div class="admin-card">
+        <h3>Upload Video</h3>
+        <input id="vTitle" class="admin-input" placeholder="Movie Title">
+        <input id="vLink" class="admin-input" placeholder="Video Player URL">
+        <input id="vThumb" class="admin-input" placeholder="Thumbnail Image URL">
+        <select id="vCatSelect" class="admin-input"></select>
+        <button onclick="saveVideo()" class="btn-premium" style="background:#00c853; color:#fff;">Upload Movie</button>
+      </div>
+
+      <div class="admin-card">
+        <h3>Manage Movies</h3>
+        <div id="adminVideoList"></div>
+      </div>
+      
+      <button onclick="closeAdmin()" class="btn-premium" style="background:#333; color:#fff;">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const BIN_ID = "69cb78f8aaba882197ad9f65", MASTER_KEY = "$2a$10$mr0rpThgZSw.qns0mo/jEerdTDBeZVCCQEadGMUTo0CBCMbCMZ1Gm";
+    // পয়েন্ট ডিফল্ট জিরো করা হয়েছে
+    let videos = [], categories = [], tgLink = "", directLink = "", userPoints = 0, currentFilter = "All", adCount = 0, currentV = null;
+
+    async function init() {
+      // সুপার ফাস্ট লোডিং সিস্টেম
+      const dataReady = fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { "X-Master-Key": MASTER_KEY } })
+        .then(res => res.json())
+        .then(data => {
+          videos = data.record.videos || [];
+          categories = data.record.categories || [];
+          tgLink = data.record.telegramLink || "#";
+          directLink = data.record.directLink || "";
+          document.getElementById('tgFloatingBtn').href = tgLink;
+          renderUI();
+          return true;
+        }).catch(() => true);
+
+      // ১.৫ থেকে ২ সেকেন্ডের মধ্যে ফিনিশ হবে
+      await Promise.all([dataReady, new Promise(r => setTimeout(r, 1500))]);
+      const loader = document.getElementById('preloader');
+      loader.style.opacity = '0';
+      setTimeout(() => loader.style.display = 'none', 300);
+    }
+
+    function renderUI() {
+      document.getElementById('pointDisplay').innerText = `Points: ${userPoints}`;
+      const bar = document.getElementById('categoryBar');
+      bar.innerHTML = `<div class="cat-chip ${currentFilter==='All'?'active':''}" onclick="setFilter('All')">All</div>`;
+      categories.forEach(c => bar.innerHTML += `<div class="cat-chip ${currentFilter===c?'active':''}" onclick="setFilter('${c}')">${c}</div>`);
+      renderVideos();
+    }
+
+    function renderVideos(term = "") {
+      const list = document.getElementById('videoList'); list.innerHTML = '';
+      const filtered = videos.filter(v => (currentFilter === 'All' || v.category === currentFilter) && v.title.toLowerCase().includes(term.toLowerCase()));
+      filtered.forEach(v => {
+        list.innerHTML += `<div class="video-card" onclick="openOptions(${videos.indexOf(v)})"><img src="${v.thumb}"><div class="video-title">${v.title}</div></div>`;
+      });
+    }
+
+    function setFilter(cat) { currentFilter = cat; renderUI(); }
+    function searchVideos() { renderVideos(document.getElementById('searchInput').value); }
+
+    function openOptions(idx) {
+      currentV = videos[idx]; adCount = 0;
+      document.getElementById('modalTitle').innerText = currentV.title;
+      document.getElementById('modalThumb').src = currentV.thumb;
+      document.getElementById('watchAdBtn').style.display = 'block';
+      document.getElementById('watchAdBtn').innerText = `START AD TASK (0/3)`;
+      document.getElementById('playNowBtn').style.display = 'none';
+      document.getElementById('optionsModal').style.display = 'flex';
+    }
+
+    document.getElementById('watchAdBtn').onclick = () => {
+      if (typeof window.show_10799185 === 'function') {
+        window.show_10799185().then(() => { step(); }).catch(() => { step(); });
+      } else { step(); }
+    };
+
+    function step() {
+      adCount++;
+      document.getElementById('watchAdBtn').innerText = `TASK ${adCount} DONE`;
+      if(adCount >= 3) {
+        userPoints += 10;
+        document.getElementById('pointDisplay').innerText = `Points: ${userPoints}`;
+        document.getElementById('watchAdBtn').style.display = 'none';
+        document.getElementById('playNowBtn').style.display = 'block';
+      }
+    }
+
+    document.getElementById('playNowBtn').onclick = () => {
+      if(directLink) window.open(directLink, '_blank');
+      setTimeout(() => { window.open(currentV.link, '_blank'); }, 800);
+    };
+
+    window.closeModal = () => document.getElementById('optionsModal').style.display = 'none';
+
+    // Admin Controls
+    let clks = 0; 
+    document.getElementById('adminTrigger').onclick = () => { clks++; if(clks >= 5) { document.getElementById('adminPanel').style.display = 'block'; clks = 0; } };
+
+    function loginAdmin() { 
+      if(document.getElementById('adminPass').value === "153781") { 
+        document.getElementById('loginArea').style.display = 'none'; 
+        document.getElementById('adminContent').style.display = 'block'; 
+        updateAdminUI();
+      } else { alert("Wrong PIN!"); }
+    }
+
+    function updateAdminUI() {
+      document.getElementById('tgLinkInput').value = tgLink;
+      document.getElementById('directLinkInput').value = directLink;
+      const vList = document.getElementById('adminVideoList'); vList.innerHTML = '';
+      videos.forEach((v, i) => vList.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; background:#000; margin-bottom:6px; border-radius:8px; font-size:11px; border: 1px solid #222;"><span>${v.title}</span><button class="btn-del" onclick="deleteVideo(${i})">Del</button></div>`);
+      const cList = document.getElementById('adminCategoryList'); cList.innerHTML = '';
+      categories.forEach((c, i) => cList.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; background:#000; margin-bottom:6px; border-radius:8px; font-size:11px; border: 1px solid #222;"><span>${c}</span><button class="btn-del" onclick="deleteCategory(${i})">Del</button></div>`);
+      document.getElementById('vCatSelect').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    async function sync() { await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: "PUT", headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY }, body: JSON.stringify({ videos, categories, telegramLink: tgLink, directLink: directLink }) }); }
+    
+    function saveDirectLink() { directLink = document.getElementById('directLinkInput').value; sync(); alert("Direct Link Saved!"); }
+    function addCategory() { const c = document.getElementById('newCatInput').value; if(c){categories.push(c); sync(); updateAdminUI(); renderUI(); document.getElementById('newCatInput').value='';}}
+    function deleteCategory(i) { categories.splice(i,1); sync(); updateAdminUI(); renderUI(); }
+    function saveVideo() { const v = { title: document.getElementById('vTitle').value, link: document.getElementById('vLink').value, thumb: document.getElementById('vThumb').value, category: document.getElementById('vCatSelect').value }; videos.unshift(v); sync(); updateAdminUI(); renderUI(); alert("Movie Uploaded!"); }
+    function deleteVideo(i) { videos.splice(i,1); sync(); updateAdminUI(); renderUI(); }
+    function saveTgLink() { tgLink = document.getElementById('tgLinkInput').value; sync(); alert("Telegram Updated!"); }
+    function closeAdmin() { document.getElementById('adminPanel').style.display='none'; document.getElementById('loginArea').style.display='block'; document.getElementById('adminContent').style.display='none'; }
+
+    init();
+  </script>
+</body>
+</html>
