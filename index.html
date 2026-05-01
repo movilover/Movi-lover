@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Movie Lover - Pro Final</title>
+  
+  <script src="//libtl.com/sdk.js" data-zone="10799185" data-sdk="show_10799185"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Poppins', sans-serif; background: #050505; color: #fff; overflow-x: hidden; }
+
+    /* --- PREMIUM SPLASH LOADER --- */
+    #loader-wrapper { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: radial-gradient(circle, #1a0000 0%, #000 100%); 
+      display: flex; flex-direction: column; justify-content: center; align-items: center; 
+      z-index: 99999; transition: opacity 0.8s ease, visibility 0.8s;
+    }
+    .loader-logo { font-size: 32px; font-weight: 800; letter-spacing: 3px; animation: pulse 1.5s infinite ease-in-out; }
+    .loader-logo span { color: #ff0000; text-shadow: 0 0 15px rgba(255,0,0,0.5); }
+    @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.7; } 50% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.7; } }
+    .loading-dots { display: flex; gap: 5px; margin-top: 20px; }
+    .dot-item { width: 8px; height: 8px; background: #ff0000; border-radius: 50%; animation: dots 1.4s infinite; }
+    .dot-item:nth-child(2) { animation-delay: 0.2s; }
+    .dot-item:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dots { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+    /* APP CONTENT */
+    #main-app-content { opacity: 0; transform: translateY(20px); transition: 1s ease; display: none; }
+    #main-app-content.show { opacity: 1; transform: translateY(0); display: block; }
+
+    .header { background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #1a1a1a; }
+    .header-logo h1 { font-size: 16px; font-weight: 800; }
+    .header-right { display: flex; flex-direction: row; gap: 12px; align-items: center; }
+    .nav-icon { font-size: 20px; color: #fff; position: relative; cursor: pointer; }
+    .tg-icon { color: #0088cc; font-size: 24px; filter: drop-shadow(0 0 5px rgba(0,136,204,0.4)); }
+    .header-right .fa-heart { font-size: 20px; color: #ff0000; filter: drop-shadow(0 0 10px rgba(255,0,0,0.5)); }
+    .header-right .fa-bell { font-size: 20px; color: #fff; }
+    .bell-icon-container .dot { position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; background: #ff0000; border-radius: 50%; display: none; }
+
+    /* Stats & Refer */
+    .top-info-container { margin: 15px; background: #0d0d0d; border-radius: 15px; border: 1px solid #1a1a1a; overflow: hidden; }
+    .balance-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(255,0,0,0.05); }
+    .point-box { background: linear-gradient(90deg, #ff0000, #b30000); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+    .scrolling-notice { background: #000; padding: 6px 15px; border-top: 1px solid #111; }
+    .scrolling-notice p { display: inline-block; animation: marquee 15s linear infinite; color: #ffeb3b; font-size: 10px; }
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+    .refer-container { padding: 0 15px 15px; }
+    .refer-card { background: #111; border: 1px solid #222; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 10px; }
+    .ref-icon-circle { width: 35px; height: 35px; background: rgba(255,0,0,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ff0000; }
+    .ref-details { flex: 1; overflow: hidden; }
+    .ref-details span { display: block; font-size: 9px; color: #555; font-weight: 700; text-transform: uppercase; }
+    .ref-link-text { font-size: 11px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .copy-btn-new { background: #ff0000; color: #fff; font-size: 10px; font-weight: 800; padding: 8px 15px; border-radius: 10px; cursor: pointer; }
+
+    /* PREMIUM SEARCH BAR */
+    .search-container { position: relative; width: 92%; margin: 5px auto 20px; }
+    .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #ff0000; font-size: 14px; z-index: 5; text-shadow: 0 0 8px rgba(255,0,0,0.6); }
+    .search-bar { width: 100%; padding: 14px 20px 14px 45px; border-radius: 15px; background: #0a0a0a; border: 1px solid #333; color: #fff; outline: none; font-size: 13px; transition: 0.4s; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .search-bar:focus { border-color: #ff0000; box-shadow: 0 0 15px rgba(255,0,0,0.2), inset 0 0 5px rgba(255,0,0,0.1); background: #0f0f0f; }
+
+    /* Video Card */
+    .video-grid { padding: 0 10px 100px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .video-card { background: #0d0d0d; border-radius: 15px; overflow: hidden; border: 1px solid #1a1a1a; position: relative; }
+    .video-card img { width: 100%; height: 110px; object-fit: cover; }
+    .video-title { padding: 8px 10px; font-size: 11px; color: #eee; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; font-weight: 600; }
+    .fav-btn { position: absolute; top: 8px; right: 8px; z-index: 10; font-size: 18px; cursor: pointer; transition: 0.3s; }
+    .fav-btn.active { color: #ff0000; }
+    .fav-btn.inactive { color: rgba(255,255,255,0.8); }
+
+    /* Category Chips */
+    .category-bar { display: flex; gap: 10px; padding: 0 15px 15px; overflow-x: auto; scrollbar-width: none; }
+    .cat-chip { padding: 8px 18px; background: #121212; border-radius: 25px; font-size: 11px; font-weight: 600; border: 1px solid #222; color: #777; white-space: nowrap; cursor: pointer; transition: 0.3s; }
+    .cat-chip.active-cat { background: #ff0000 !important; color: #fff !important; border-color: #ff0000 !important; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+
+    /* Bottom Sheet */
+    .bottom-sheet { position: fixed; bottom: -100%; left: 0; width: 100%; height: 85%; background: #050505; border-top: 2px solid #ff0000; border-radius: 30px 30px 0 0; z-index: 3000; transition: bottom 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.1); padding: 20px 10px; overflow-y: auto; }
+    .bottom-sheet.active { bottom: 0; }
+    .sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; z-index: 2500; backdrop-filter: blur(5px); }
+
+    /* Modals */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: none; align-items: center; justify-content: center; z-index: 4000; }
+    .modal-content { background: #111; width: 88%; border-radius: 25px; padding: 25px; text-align: center; border: 1px solid #222; }
+    .btn-premium { width: 100%; padding: 14px; border-radius: 15px; border: none; font-weight: 800; margin-top: 10px; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+
+    #autoAdModal { z-index: 5000; }
+    .auto-ad-card { background: #000; border: 2px solid #ff0000; border-radius: 25px; padding: 30px 20px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+    .auto-ad-icon { font-size: 50px; color: #ff0000; margin-bottom: 15px; }
+    .auto-ad-message { color: #fff; font-size: 18px; font-weight: 700; line-height: 1.6; margin-bottom: 25px; }
+    .auto-ad-btn { background: #ff0000; color: #fff; width: 100%; padding: 15px; border-radius: 50px; border: none; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.4); }
+  </style>
+</head>
+<body>
+
+  <div id="loader-wrapper">
+      <div class="loader-logo">MOVIE<span>LOVER</span></div>
+      <div class="loading-dots"><div class="dot-item"></div><div class="dot-item"></div><div class="dot-item"></div></div>
+  </div>
+
+  <div class="modal" id="autoAdModal">
+    <div class="auto-ad-card">
+      <div class="auto-ad-icon"><i class="fa fa-gift"></i></div>
+      <div class="auto-ad-message">অ্যাডটি দেখে আবার ব্যাক দিয়ে চলে আসো বন্ধু।</div>
+      <button onclick="openAutoAd()" class="auto-ad-btn">অ্যাডটি দেখুন</button>
+    </div>
+  </div>
+
+  <div id="main-app-content">
+    <div class="header">
+      <div class="header-logo"><h1>MOVIE<span style="color:red;">LOVER</span></h1></div>
+      <div class="header-right">
+        <div id="tgLinkBtn" class="nav-icon tg-icon"><i class="fab fa-telegram"></i></div>
+        <div class="nav-icon" onclick="openSheet('History')"><i class="fa fa-history" style="color: #ffeb3b;"></i></div>
+        <div class="nav-icon" onclick="openSheet('Favorites')"><i class="fa fa-heart"></i></div>
+        <div class="nav-icon bell-icon-container"><i class="fa fa-bell"></i><div class="dot" id="notifDot"></div></div>
+      </div>
+    </div>
+
+    <div class="top-info-container">
+      <div class="balance-row">
+        <span style="font-size: 10px; color: #888; font-weight: 600;">ACCOUNT BALANCE</span>
+        <div class="point-box" id="pointDisplay">0 Points</div>
+      </div>
+      <div class="scrolling-notice"><p id="marqueeText">Loading...</p></div>
+    </div>
+
+    <div class="refer-container">
+        <div class="refer-card">
+            <div class="ref-icon-circle"><i class="fa fa-gift"></i></div>
+            <div class="ref-details">
+                <span>Referral Link</span>
+                <div class="ref-link-text" id="refLinkText">Generating...</div>
+            </div>
+            <div class="copy-btn-new" onclick="copyRef()">COPY</div>
+        </div>
+    </div>
+
+    <div class="search-container">
+      <i class="fa fa-search search-icon"></i>
+      <input type="text" id="searchInput" class="search-bar" placeholder="সিনেমা অথবা নাটক সার্চ করুন..." oninput="searchMainVideos()">
+    </div>
+
+    <div class="category-bar" id="categoryBar"></div>
+    <div class="video-grid" id="mainVideoList"></div>
+  </div>
+
+  <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+  <div class="bottom-sheet" id="videoSheet">
+      <div style="width:40px; height:4px; background:#222; border-radius:10px; margin: 0 auto 15px;"></div>
+      <div class="sheet-header" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:15px; border-bottom:1px solid #111; margin-bottom:10px;">
+          <h3 id="sheetTitle" style="font-size: 16px; color: #ff0000; font-weight: 800;">Category</h3>
+          <div onclick="closeSheet()" style="color:#ff0000; cursor:pointer;"><i class="fa fa-times-circle"></i></div>
+      </div>
+      <div class="video-grid" id="sheetVideoList"></div>
+  </div>
+
+  <div class="modal" id="optionsModal">
+    <div class="modal-content">
+      <img id="modalThumb" style="width:100%; border-radius:20px; height:160px; object-fit:cover; margin-bottom:10px;">
+      <h4 id="modalTitle" style="font-size:13px; color:#fff; margin-bottom:15px;"></h4>
+      <button id="watchAdBtn" class="btn-premium" style="background:red; color:white;">WATCH AD TO UNLOCK (0/3)</button>
+      <button id="playNowBtn" class="btn-premium" style="background:green; color:white; display:none;">▶ PLAY NOW</button>
+      <button onclick="closeModal()" style="color:#555; margin-top:15px; border:none; background:none; cursor:pointer; font-size:11px;">CLOSE</button>
+    </div>
+  </div>
+
+  <script>
+    const DIRECT_LINK_AD = "https://omg10.com/4/10942879";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPEvyz0GVGUGvF2K0H3e2Dx4Qw_WCYjFU",
+      authDomain: "movi-lover-video.firebaseapp.com",
+      projectId: "movi-lover-video",
+      databaseURL: "https://movi-lover-video-default-rtdb.firebaseio.com",
+      appId: "1:1063457095926:web:4695d26c35e8b603326cd7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let videos = [], categories = [], currentV = null, adCount = 0;
+    let favorites = JSON.parse(localStorage.getItem('favs')) || [];
+    let watchHistory = JSON.parse(localStorage.getItem('watch_history')) || [];
+    let userId = window.Telegram.WebApp.initDataUnsafe?.user?.id || "user" + Math.floor(Math.random()*1000);
+
+    function init() {
+        setTimeout(() => {
+            document.getElementById('loader-wrapper').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader-wrapper').style.display = 'none';
+                document.getElementById('main-app-content').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('main-app-content').classList.add('show');
+                    applyAllChipActive();
+                }, 50);
+            }, 800);
+        }, 2000);
+
+        document.getElementById('refLinkText').innerText = `https://t.me/movi_lover_0_bot/app?startapp=${userId}`;
+        
+        db.ref('/').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            const videoData = data.movies || {};
+            videos = Object.keys(videoData).map(key => ({ ...videoData[key], key })).reverse();
+            categories = data.categories || ["General"];
+            document.getElementById('marqueeText').innerText = data.notice || "Movie Lover-এ স্বাগতম!";
+            document.getElementById('tgLinkBtn').onclick = () => window.open(data.telegramLink || "#", '_blank');
+            renderHome();
+        });
+
+        db.ref('users/' + userId + '/points').on('value', (snap) => {
+            document.getElementById('pointDisplay').innerText = `${snap.val() || 0} Points`;
+        });
+
+        setInterval(() => {
+            document.getElementById('autoAdModal').style.display = 'flex';
+        }, 600000);
+    }
+
+    function applyAllChipActive() {
+        document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active-cat'));
+        const allChip = document.getElementById('chip-All');
+        if(allChip) allChip.classList.add('active-cat');
+    }
+
+    function openAutoAd() {
+        window.open(DIRECT_LINK_AD, '_blank');
+        document.getElementById('autoAdModal').style.display = 'none';
+    }
+
+    function renderHome() {
+        const bar = document.getElementById('categoryBar');
+        bar.innerHTML = `<div class="cat-chip" id="chip-All" onclick="openSheet('All')">All</div>`;
+        categories.forEach(c => {
+            bar.innerHTML += `<div class="cat-chip" id="chip-${c.replace(/\s+/g, '')}" onclick="openSheet('${c}')">${c}</div>`;
+        });
+        applyAllChipActive();
+        renderVideoGrid('mainVideoList', videos.slice(0, 10)); 
+    }
+
+    function openSheet(cat) {
+        if(cat === 'All') return;
+
+        document.getElementById('sheetTitle').innerText = cat;
+        document.getElementById('sheetOverlay').style.display = 'block';
+        document.getElementById('videoSheet').classList.add('active');
+        
+        document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active-cat'));
+        const activeChip = document.getElementById('chip-' + cat.replace(/\s+/g, ''));
+        if(activeChip) activeChip.classList.add('active-cat');
+
+        let filtered;
+        if (cat === 'Favorites') filtered = videos.filter(v => favorites.includes(v.key));
+        else if (cat === 'History') filtered = videos.filter(v => watchHistory.includes(v.key)).reverse();
+        else filtered = videos.filter(v => v.category === cat);
+
+        const sheetList = document.getElementById('sheetVideoList');
+        sheetList.innerHTML = '';
+        
+        if(cat.includes("Viral") || cat.includes("ভাইরাল")) {
+            sheetList.innerHTML = `<div style="grid-column:1/-1; background:linear-gradient(145deg, #220000, #050505); border:1px solid #ff0000; border-radius:20px; padding:30px; text-align:center; margin-bottom:15px;"><h2 style="color:#fff; margin-bottom:15px;">Exclusive Viral Videos</h2><a href="https://movilover18.blogspot.com/?m=1" target="_blank" style="background:#ff0000; color:#fff; padding:12px 35px; border-radius:50px; font-weight:800; text-decoration:none; display:inline-block;">ভিডিও দেখুন</a></div>`;
+        }
+        renderVideoGrid('sheetVideoList', filtered, true);
+    }
+
+    function renderVideoGrid(targetId, data, append = false) {
+        const list = document.getElementById(targetId);
+        if(!append) list.innerHTML = '';
+        data.forEach(v => {
+            const isFav = favorites.includes(v.key);
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.innerHTML = `
+                <div class="fav-btn ${isFav?'active':'inactive'}" onclick="toggleFav('${v.key}',event)"><i class="fa fa-heart"></i></div>
+                <div onclick="openOptions('${v.key}')">
+                    <img src="${v.thumb}" loading="lazy">
+                    <div class="video-title">${v.title}</div>
+                </div>`;
+            list.appendChild(card);
+        });
+    }
+
+    function openOptions(key) {
+        currentV = videos.find(v => v.key === key); adCount = 0;
+        document.getElementById('modalTitle').innerText = currentV.title;
+        document.getElementById('modalThumb').src = currentV.thumb;
+        document.getElementById('watchAdBtn').style.display = 'block';
+        document.getElementById('watchAdBtn').innerText = `WATCH AD TO UNLOCK (0/3)`;
+        document.getElementById('playNowBtn').style.display = 'none';
+        document.getElementById('optionsModal').style.display = 'flex';
+    }
+
+    document.getElementById('watchAdBtn').onclick = () => { 
+        if (typeof window.show_10799185 === 'function') window.show_10799185().then(() => step()).catch(() => step()); 
+        else step(); 
+    };
+
+    function step() { 
+        adCount++; document.getElementById('watchAdBtn').innerText = `DONE ${adCount}/3`; 
+        if(adCount >= 3) { 
+            db.ref('users/' + userId + '/points').transaction(p => (p || 0) + 5); 
+            document.getElementById('watchAdBtn').style.display = 'none'; 
+            document.getElementById('playNowBtn').style.display = 'block'; 
+        } 
+    }
+
+    document.getElementById('playNowBtn').onclick = () => {
+        // হিস্টোরি সেভ করা লজিক
+        watchHistory = watchHistory.filter(id => id !== currentV.key);
+        watchHistory.push(currentV.key);
+        if(watchHistory.length > 20) watchHistory.shift(); 
+        localStorage.setItem('watch_history', JSON.stringify(watchHistory));
+
+        window.open(DIRECT_LINK_AD, '_blank');
+        setTimeout(() => { window.open(currentV.link, '_blank'); }, 800);
+    };
+
+    function copyRef() { navigator.clipboard.writeText(document.getElementById('refLinkText').innerText); alert("Copied!"); }
+    function closeSheet() { 
+        document.getElementById('videoSheet').classList.remove('active'); 
+        document.getElementById('sheetOverlay').style.display = 'none'; 
+        applyAllChipActive();
+    }
+    function searchMainVideos() { let term = document.getElementById('searchInput').value.toLowerCase(); renderVideoGrid('mainVideoList', videos.filter(v => v.title.toLowerCase().includes(term))); }
+    function toggleFav(k, e) { e.stopPropagation(); if(favorites.includes(k)) favorites = favorites.filter(f => f !== k); else favorites.push(k); localStorage.setItem('favs', JSON.stringify(favorites)); renderHome(); }
+    window.closeModal = () => document.getElementById('optionsModal').style.display = 'none';
+    
+    init();
+  </script>
+</body>
+</html>
