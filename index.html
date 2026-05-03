@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Movie Lover - Pro Final</title>
+  
+  <script src="//libtl.com/sdk.js" data-zone="10799185" data-sdk="show_10799185"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { font-family:'Poppins',sans-serif; background:#050505; color:#fff; overflow-x:hidden; }
+
+    /* ── SPLASH LOADER ── */
+    #loader-wrapper {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:radial-gradient(circle,#1a0000 0%,#000 100%);
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      z-index:99999; transition:opacity .8s ease;
+    }
+    .loader-logo { font-size:32px; font-weight:800; letter-spacing:3px; animation:pulse 1.5s infinite ease-in-out; }
+    .loader-logo span { color:#ff0000; text-shadow:0 0 15px rgba(255,0,0,.5); }
+    @keyframes pulse { 0%{transform:scale(.95);opacity:.7} 50%{transform:scale(1);opacity:1} 100%{transform:scale(.95);opacity:.7} }
+    .loading-dots { display:flex; gap:5px; margin-top:20px; }
+    .dot-item { width:8px; height:8px; background:#ff0000; border-radius:50%; animation:dots 1.4s infinite; }
+    .dot-item:nth-child(2){animation-delay:.2s} .dot-item:nth-child(3){animation-delay:.4s}
+    @keyframes dots { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+
+    /* ── APP CONTENT ── */
+    #main-app-content { opacity:0; transform:translateY(20px); transition:1s ease; display:none; }
+    #main-app-content.show { opacity:1; transform:translateY(0); display:block; }
+
+    /* ── HEADER ── */
+    .header {
+      background:rgba(0,0,0,0.85); backdrop-filter:blur(18px);
+      padding:0 16px; height:58px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:1000;
+      border-bottom:1px solid #1a1a1a;
+    }
+    .header-logo h1 { font-size:17px; font-weight:800; letter-spacing:1px; }
+    .header-logo h1 span { color:#ff0000; }
+    .header-icons { display:flex; align-items:center; gap:6px; }
+    .h-icon {
+      width:38px; height:38px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:17px; cursor:pointer; color:#ccc;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.06);
+      transition:background .2s, color .2s;
+      position:relative;
+    }
+    .h-icon:active { background:rgba(255,0,0,0.15); }
+    .h-icon.tg    { color:#0088cc; }
+    .h-icon.red   { color:#ff0000; }
+    .h-icon.gold  { color:#ffcc00; }
+    .h-icon.profile-btn { background:linear-gradient(135deg,#ff0000,#8b0000); color:#fff; border-color:transparent; box-shadow:0 2px 10px rgba(255,0,0,.35); }
+
+    /* ── SCROLLING NOTICE ── */
+    .notice-bar {
+      background:linear-gradient(90deg,#0d0000,#110000,#0d0000);
+      border-bottom:1px solid rgba(255,0,0,0.15);
+      padding:7px 0; overflow:hidden;
+      display:flex; align-items:center; gap:0;
+    }
+    .notice-label {
+      flex-shrink:0; background:#ff0000;
+      font-size:9px; font-weight:800; letter-spacing:1px;
+      padding:4px 10px; margin-right:10px;
+      clip-path:polygon(0 0,100% 0,88% 100%,0 100%);
+      padding-right:18px;
+    }
+    .notice-text {
+      display:inline-block; white-space:nowrap;
+      animation:marquee 20s linear infinite;
+      color:#ffeb3b; font-size:10px; font-weight:600;
+    }
+    @keyframes marquee { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
+
+    /* ── SEARCH BAR ── */
+    .search-container { position:relative; width:92%; margin:16px auto 14px; }
+    .search-icon { position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#ff0000; font-size:15px; z-index:10; }
+    .search-bar {
+      width:100%; padding:14px 18px 14px 46px; border-radius:18px;
+      background:linear-gradient(145deg,#0f0f0f,#151515);
+      border:1px solid #222; color:#fff; outline:none; font-size:13px;
+      box-shadow:inset 0 2px 5px rgba(0,0,0,.5);
+      transition:.35s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .search-bar:focus { border-color:#ff0000; transform:scale(1.015); background:#0a0a0a; }
+
+    /* ── CATEGORY CHIPS ── */
+    .category-bar { display:flex; gap:9px; padding:0 15px 14px; overflow-x:auto; scrollbar-width:none; }
+    .cat-chip { padding:8px 17px; background:#111; border-radius:25px; font-size:11px; font-weight:600; border:1px solid #222; color:#666; white-space:nowrap; cursor:pointer; transition:.25s; flex-shrink:0; }
+    .cat-chip.active-cat { background:#ff0000!important; color:#fff!important; border-color:#ff0000!important; }
+
+    /* ── VIDEO GRID ── */
+    .video-grid { padding:0 10px 100px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .video-card { background:#0d0d0d; border-radius:15px; overflow:hidden; border:1px solid #1a1a1a; position:relative; }
+    .video-card img { width:100%; height:110px; object-fit:cover; display:block; }
+    .video-title { padding:8px 10px; font-size:11px; color:#eee; height:42px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.4; font-weight:600; }
+
+    /* Heart (fav) top-right */
+    .fav-btn { position:absolute; top:8px; right:8px; z-index:10; font-size:18px; cursor:pointer; color:rgba(255,255,255,.7); }
+    .fav-btn.active { color:#ff0000; }
+
+    /* Share btn top-left */
+    .share-btn {
+      position:absolute; top:8px; left:8px; z-index:10;
+      width:28px; height:28px;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(6px);
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:12px; cursor:pointer;
+      border:1px solid rgba(255,255,255,.15);
+      transition:background .2s, transform .15s;
+    }
+    .share-btn:active { background:rgba(255,0,0,.7); transform:scale(.9); }
+    .share-btn i { color:#fff; }
+
+    /* ── BOTTOM SHEETS ── */
+    .bottom-sheet { position:fixed; bottom:-100%; left:0; width:100%; height:85%; background:#050505; border-top:2px solid #ff0000; border-radius:30px 30px 0 0; z-index:3000; transition:bottom .55s cubic-bezier(.18,.89,.32,1.1); padding:20px 12px; overflow-y:auto; }
+    .bottom-sheet.active { bottom:0; }
+    .sheet-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.9); display:none; z-index:2500; backdrop-filter:blur(5px); }
+    .close-sheet-btn { position:absolute; top:15px; right:15px; width:35px; height:35px; background:rgba(255,0,0,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ff0000; font-size:18px; cursor:pointer; border:1px solid rgba(255,0,0,.2); z-index:100; }
+    .sheet-drag { width:40px; height:4px; background:#222; border-radius:10px; margin:0 auto 16px; }
+
+    /* ── PLAYER SHEET ── */
+    #videoPlayerSheet { height:92%; border-top:3px solid #ff0000; padding:16px 12px; }
+
+    /* Responsive video wrapper: 16:9 */
+    #playerContainer {
+      width:100%; background:#000; border-radius:15px;
+      overflow:hidden; position:relative;
+      padding-top:56.25%; /* 16:9 */
+      margin-top:8px;
+    }
+    #playerContainer iframe {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%;
+      border:none;
+    }
+
+    /* Player action row */
+    .player-actions {
+      display:flex; gap:9px; margin-top:14px; flex-wrap:wrap;
+    }
+    .player-actions button {
+      flex:1; min-width:120px; padding:12px 10px; border-radius:14px;
+      border:none; font-weight:800; cursor:pointer;
+      font-size:11px; display:flex; align-items:center;
+      justify-content:center; gap:7px; transition:transform .15s, opacity .15s;
+    }
+    .player-actions button:active { transform:scale(.96); opacity:.85; }
+    .btn-share-player { background:linear-gradient(90deg,#cc0000,#ff3333); color:#fff; }
+    .btn-fullscreen   { background:#1a1a1a; color:#fff; border:1px solid #333!important; }
+    .btn-close-player { background:#ff0000; color:#fff; }
+
+    /* Skip-ad safe zone */
+    .skip-ad-hint {
+      font-size:9px; color:#555; text-align:center;
+      margin-top:6px; padding:0 5px;
+    }
+
+    /* Fullscreen landscape hint toast */
+    #rotateHint {
+      display:none; position:fixed; bottom:110px; left:50%; transform:translateX(-50%);
+      background:rgba(255,255,255,.12); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.2); border-radius:30px;
+      padding:9px 18px; font-size:11px; color:#fff; z-index:9999;
+      white-space:nowrap;
+    }
+
+    /* ── PREMIUM CATEGORY SHEET CARD ── */
+    .sheet-promo-wrap { padding:15px 5px 30px; }
+    .sheet-promo-card { background:linear-gradient(135deg,#1c0000 0%,#0d0d0d 60%,#1c0000 100%); border:1px solid rgba(255,0,0,.35); border-radius:24px; padding:35px 22px; text-align:center; position:relative; overflow:hidden; box-shadow:0 0 40px rgba(255,0,0,.1); }
+    .sheet-promo-card::before { content:''; position:absolute; top:-60px; right:-60px; width:160px; height:160px; background:radial-gradient(circle,rgba(255,0,0,.12) 0%,transparent 70%); border-radius:50%; pointer-events:none; }
+    .spc-icon { font-size:52px; margin-bottom:14px; display:block; }
+    .spc-badge { display:inline-block; background:linear-gradient(90deg,#ff0000,#cc0000); color:#fff; font-size:9px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; padding:4px 14px; border-radius:20px; margin-bottom:14px; }
+    .spc-title { font-size:17px; font-weight:800; color:#fff; margin-bottom:10px; }
+    .spc-msg { font-size:12px; color:#888; line-height:1.75; margin-bottom:26px; padding:0 8px; }
+    .spc-btn { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(90deg,#ff0000,#b30000); color:#fff; font-size:13px; font-weight:800; padding:14px 28px; border-radius:16px; border:none; cursor:pointer; text-decoration:none; box-shadow:0 6px 20px rgba(255,0,0,.4); transition:transform .2s; }
+    .spc-btn:active { transform:scale(.97); }
+
+    /* ── PROFILE SHEET ── */
+    #profileSheet { height:80%; }
+    .prof-top { display:flex; flex-direction:column; align-items:center; padding:5px 0 22px; }
+    .prof-avatar { width:78px; height:78px; background:linear-gradient(135deg,#ff0000,#700000); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; margin-bottom:10px; box-shadow:0 0 28px rgba(255,0,0,.4); border:2px solid rgba(255,0,0,.3); }
+    .prof-name { font-size:15px; font-weight:800; color:#fff; margin-bottom:3px; }
+    .prof-uid  { font-size:10px; color:#555; letter-spacing:.5px; }
+    .prof-uid span { color:#888; font-weight:600; }
+    .prof-balance-box { margin:0 5px 14px; background:linear-gradient(135deg,#1c0000,#110000); border:1px solid rgba(255,0,0,.35); border-radius:18px; padding:16px 20px; display:flex; align-items:center; gap:14px; }
+    .pbb-icon { width:46px; height:46px; background:rgba(255,0,0,.12); border-radius:14px; display:flex; align-items:center; justify-content:center; color:#ff0000; font-size:20px; flex-shrink:0; }
+    .pbb-label { font-size:9px; color:#555; font-weight:700; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px; }
+    .pbb-value { font-size:22px; font-weight:800; color:#fff; line-height:1; }
+    .pbb-pts   { font-size:11px; color:#ff0000; font-weight:700; }
+    .prof-rows { display:flex; flex-direction:column; gap:10px; padding:0 5px; }
+    .prof-row { background:#0d0d0d; border:1px solid #1a1a1a; border-radius:16px; padding:13px 15px; display:flex; align-items:center; gap:13px; }
+    .pr-icon { width:40px; height:40px; background:rgba(255,0,0,.08); border-radius:12px; display:flex; align-items:center; justify-content:center; color:#ff0000; font-size:16px; flex-shrink:0; }
+    .pr-label { font-size:9px; color:#555; font-weight:700; text-transform:uppercase; letter-spacing:.8px; display:block; margin-bottom:3px; }
+    .pr-value { font-size:12px; color:#ddd; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+    .pr-copy  { flex-shrink:0; background:#ff0000; color:#fff; font-size:9px; font-weight:800; padding:8px 13px; border-radius:10px; cursor:pointer; border:none; }
+    .pr-tg-btn { flex-shrink:0; background:linear-gradient(90deg,#0088cc,#005f8e); color:#fff; font-size:9px; font-weight:800; padding:8px 13px; border-radius:10px; cursor:pointer; border:none; }
+
+    /* ── MODALS ── */
+    .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.98); display:none; align-items:center; justify-content:center; z-index:4000; }
+    .modal-content { background:#111; width:88%; border-radius:25px; padding:25px; text-align:center; border:1px solid #222; }
+    .btn-premium { width:100%; padding:14px; border-radius:15px; border:none; font-weight:800; margin-top:10px; cursor:pointer; text-transform:uppercase; font-size:12px; }
+
+    /* ── AUTO AD MODAL ── */
+    #autoAdModal { z-index:5000; backdrop-filter:blur(12px); background:rgba(0,0,0,.9); }
+    .auto-ad-card { background:linear-gradient(145deg,#0f0f0f,#1a1a1a); border:1px solid rgba(255,0,0,.3); border-radius:30px; padding:35px 25px; text-align:center; width:85%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+    .ad-icon-wrap { width:70px; height:70px; background:rgba(255,0,0,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:#ff0000; font-size:30px; }
+    .ad-title { font-size:18px; font-weight:800; color:#fff; margin-bottom:10px; }
+    .ad-desc  { font-size:12px; color:#aaa; line-height:1.6; margin-bottom:25px; }
+    .btn-ad-go { background:linear-gradient(90deg,#ff0000,#b30000); color:#fff; padding:15px; border-radius:18px; font-weight:800; border:none; width:100%; font-size:13px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOADER ══ -->
+<div id="loader-wrapper">
+  <div class="loader-logo">MOVIE<span>LOVER</span></div>
+  <div class="loading-dots">
+    <div class="dot-item"></div><div class="dot-item"></div><div class="dot-item"></div>
+  </div>
+</div>
+
+<!-- ══ AUTO AD MODAL ══ -->
+<div class="modal" id="autoAdModal">
+  <div class="auto-ad-card">
+    <div class="ad-icon-wrap"><i class="fa fa-play-circle"></i></div>
+    <div class="ad-title">ব্রেক টাইম বন্ধু!</div>
+    <div class="ad-desc">আমাদের সাপোর্ট করতে নিচের অ্যাডটি দেখুন এবং দেখা শেষ হলে আবার ব্যাক দিয়ে চলে আসুন।</div>
+    <button onclick="openAutoAd()" class="btn-ad-go">অ্যাডটি দেখুন এবং মুভি এনজয় করুন</button>
+  </div>
+</div>
+
+<!-- ══ LANDSCAPE ROTATE HINT ══ -->
+<div id="rotateHint">📱 ফুল স্ক্রিনের জন্য ফোন ঘোরান (Landscape)</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="main-app-content">
+
+  <!-- HEADER: Logo | Search · History · Favorites · Profile -->
+  <div class="header">
+    <div class="header-logo"><h1>MOVIE<span>LOVER</span></h1></div>
+    <div class="header-icons">
+      <div id="tgLinkBtn" class="h-icon tg" title="Telegram"><i class="fab fa-telegram"></i></div>
+      <div class="h-icon gold" onclick="openSheet('History')" title="History"><i class="fa fa-history"></i></div>
+      <div class="h-icon red"  onclick="openSheet('Favorites')" title="Favorites"><i class="fa fa-heart"></i></div>
+      <div class="h-icon profile-btn" onclick="openProfileSheet()" title="Profile"><i class="fa fa-user-circle"></i></div>
+    </div>
+  </div>
+
+  <!-- SCROLLING NOTICE — just above category bar -->
+  <div class="notice-bar">
+    <div class="notice-label">LIVE</div>
+    <div style="overflow:hidden; flex:1;">
+      <span class="notice-text" id="marqueeText">স্বাগতম! Movie Lover-এ আপনাকে স্বাগতম।</span>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-container">
+    <i class="fa fa-search search-icon"></i>
+    <input type="text" id="searchInput" class="search-bar"
+           placeholder="সিনেমা অথবা নাটক সার্চ করুন..."
+           oninput="searchMainVideos()">
+  </div>
+
+  <!-- CATEGORY CHIPS — directly below notice -->
+  <div class="category-bar" id="categoryBar"></div>
+
+  <!-- ✅ NO promo card on home screen — removed -->
+
+  <!-- VIDEO GRID -->
+  <div class="video-grid" id="mainVideoList"></div>
+</div>
+
+<!-- OVERLAY -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeAllSheets()"></div>
+
+<!-- CATEGORY / HISTORY / FAVORITES SHEET -->
+<div class="bottom-sheet" id="videoSheet">
+  <div class="close-sheet-btn" onclick="closeAllSheets()"><i class="fa fa-times"></i></div>
+  <div class="sheet-drag"></div>
+  <h3 id="sheetTitle" style="color:#ff0000;margin-bottom:14px;font-size:15px;padding-left:5px;">Category</h3>
+  <div id="sheetVideoList" class="video-grid"></div>
+</div>
+
+<!-- ══ PLAYER SHEET ══ -->
+<div class="bottom-sheet" id="videoPlayerSheet">
+  <div class="close-sheet-btn" onclick="closeAllSheets()"><i class="fa fa-times"></i></div>
+  <div class="sheet-drag"></div>
+
+  <!-- Responsive 16:9 player -->
+  <div id="playerContainer">
+    <iframe id="mainPlayerIframe" src=""
+            allow="autoplay; fullscreen; encrypted-media; orientation; screen-wake-lock"
+            allowfullscreen></iframe>
+  </div>
+  <div class="skip-ad-hint">⚠️ যদি বিজ্ঞাপন আসে, কয়েক সেকেন্ড পরে Skip করুন</div>
+
+  <div style="padding:14px 4px 8px;">
+    <h2 id="nowPlayingTitle" style="font-size:14px;color:#fff;margin-bottom:4px;line-height:1.4;">Title</h2>
+    <p style="color:#444;font-size:10px;margin-bottom:14px;">Premium Video Mode</p>
+  </div>
+
+  <!-- Action buttons row -->
+  <div class="player-actions">
+    <button class="btn-share-player" onclick="shareCurrentVideo()">
+      <i class="fa fa-share-alt"></i> শেয়ার করুন
+    </button>
+    <button class="btn-fullscreen" onclick="requestFullScreen()">
+      <i class="fa fa-expand"></i> FULL SCREEN
+    </button>
+  </div>
+  <div class="player-actions" style="margin-top:9px;">
+    <button class="btn-close-player" onclick="closeAllSheets()" style="background:#ff0000;color:#fff;">
+      <i class="fa fa-times"></i> CLOSE PLAYER
+    </button>
+  </div>
+</div>
+
+<!-- PROFILE SHEET -->
+<div class="bottom-sheet" id="profileSheet">
+  <div class="close-sheet-btn" onclick="closeAllSheets()"><i class="fa fa-times"></i></div>
+  <div class="sheet-drag"></div>
+
+  <div class="prof-top">
+    <div class="prof-avatar"><i class="fa fa-user"></i></div>
+    <div class="prof-name">Movie Lover User</div>
+    <div class="prof-uid">ID: <span id="profileUserId">—</span></div>
+  </div>
+
+  <div class="prof-balance-box">
+    <div class="pbb-icon"><i class="fa fa-wallet"></i></div>
+    <div>
+      <span class="pbb-label">Account Balance</span>
+      <div class="pbb-value" id="profilePoints">0</div>
+      <span class="pbb-pts">Points</span>
+    </div>
+  </div>
+
+  <div class="prof-rows">
+
+    <!-- User ID row -->
+    <div class="prof-row">
+      <div class="pr-icon"><i class="fa fa-id-badge"></i></div>
+      <div style="flex:1;overflow:hidden;">
+        <span class="pr-label">Your User ID</span>
+        <div class="pr-value" id="profileUserIdRow">—</div>
+      </div>
+    </div>
+
+    <!-- Referral link -->
+    <div class="prof-row">
+      <div class="pr-icon"><i class="fa fa-gift"></i></div>
+      <div style="flex:1;overflow:hidden;">
+        <span class="pr-label">🎁 Invite &amp; Earn — Referral Link</span>
+        <div class="pr-value" id="profileRefLink">Generating...</div>
+      </div>
+      <button class="pr-copy" onclick="copyRef()">COPY</button>
+    </div>
+
+    <!-- Telegram Support -->
+    <div class="prof-row">
+      <div class="pr-icon" style="color:#0088cc;"><i class="fab fa-telegram"></i></div>
+      <div style="flex:1;">
+        <span class="pr-label">Contact Support</span>
+        <div class="pr-value">Telegram সাপোর্টে যোগাযোগ করুন</div>
+      </div>
+      <button class="pr-tg-btn" id="tgSupportBtn">OPEN</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- OPTIONS MODAL -->
+<div class="modal" id="optionsModal">
+  <div class="modal-content">
+    <img id="modalThumb" style="width:100%;border-radius:18px;height:155px;object-fit:cover;margin-bottom:10px;">
+    <h4 id="modalTitle" style="color:#fff;margin-bottom:14px;font-size:13px;"></h4>
+    <button id="watchAdBtn" class="btn-premium" style="background:#cc0000;color:#fff;">WATCH AD TO UNLOCK (0/3)</button>
+    <button id="playNowBtn" class="btn-premium" style="background:#1a7a1a;color:#fff;display:none;">▶ WATCH NOW</button>
+    <button onclick="closeModal()" style="color:#444;margin-top:14px;border:none;background:none;cursor:pointer;font-size:11px;">CLOSE</button>
+  </div>
+</div>
+
+<script>
+  /* ── CONSTANTS ── */
+  const APP_LINK         = "https://t.me/movi_lover_0_bot/app";
+  const DIRECT_LINK_AD   = "https://omg10.com/4/10942879";
+  const PREMIUM_CAT_NAME = "ভাইরাল ভিডিও প্রিমিয়াম";
+  const PREMIUM_CAT_LINK = "https://movilover18.blogspot.com/?m=1&zx=65176ab545f59686";
+  const TG_SUPPORT_LINK  = "https://t.me/movi_lover_0_bot";
+
+  /* ── FIREBASE ── */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBPEvyz0GVGUGvF2K0H3e2Dx4Qw_WCYjFU",
+    authDomain: "movi-lover-video.firebaseapp.com",
+    projectId: "movi-lover-video",
+    databaseURL: "https://movi-lover-video-default-rtdb.firebaseio.com",
+    appId: "1:1063457095926:web:4695d26c35e8b603326cd7"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  /* ── STATE ── */
+  let videos = [], categories = [], currentV = null, adCount = 0;
+  let favorites    = JSON.parse(localStorage.getItem('favs'))          || [];
+  let watchHistory = JSON.parse(localStorage.getItem('watch_history')) || [];
+  let userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+             || "user" + Math.floor(Math.random() * 9000 + 1000);
+
+  /* ── INIT ── */
+  function init() {
+    setTimeout(() => {
+      document.getElementById('loader-wrapper').style.display = 'none';
+      document.getElementById('main-app-content').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('main-app-content').classList.add('show');
+        applyAllChipActive();
+      }, 50);
+    }, 2000);
+
+    const refLink = `https://t.me/movi_lover_0_bot/app?startapp=${userId}`;
+    document.getElementById('profileUserId').innerText    = userId;
+    document.getElementById('profileUserIdRow').innerText = userId;
+    document.getElementById('profileRefLink').innerText   = refLink;
+    document.getElementById('tgSupportBtn').onclick = () => window.open(TG_SUPPORT_LINK, '_blank');
+
+    db.ref('/').on('value', snap => {
+      const data = snap.val() || {};
+      const vm   = data.movies || {};
+      videos     = Object.keys(vm).map(k => ({ ...vm[k], key: k })).reverse();
+      categories = data.categories || ["General"];
+
+      const notice = data.notice || "Movie Lover-এ স্বাগতম! সেরা মুভি ও নাটক উপভোগ করুন।";
+      document.getElementById('marqueeText').innerText = notice;
+
+      const tgLink = data.telegramLink || TG_SUPPORT_LINK;
+      document.getElementById('tgLinkBtn').onclick = () => window.open(tgLink, '_blank');
+
+      renderHome();
+    });
+
+    db.ref('users/' + userId + '/points').on('value', snap => {
+      document.getElementById('profilePoints').innerText = snap.val() || 0;
+    });
+
+    setInterval(() => {
+      document.getElementById('autoAdModal').style.display = 'flex';
+    }, 600000);
+  }
+
+  /* ── FULL SCREEN + ROTATION HINT ── */
+  function requestFullScreen() {
+    const el = document.getElementById('playerContainer');
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen
+             || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (fn) {
+      fn.call(el).catch(() => {});
+    }
+    /* Try to lock landscape; show hint if not supported */
+    if (screen.orientation?.lock) {
+      screen.orientation.lock('landscape').catch(() => showRotateHint());
+    } else {
+      showRotateHint();
+    }
+  }
+
+  function showRotateHint() {
+    const hint = document.getElementById('rotateHint');
+    hint.style.display = 'block';
+    clearTimeout(hint._t);
+    hint._t = setTimeout(() => hint.style.display = 'none', 3500);
+  }
+
+  /* ── SHARE ── */
+  function shareVideo(key, e) {
+    if (e) e.stopPropagation();
+    const v = videos.find(v => v.key === key);
+    if (!v) return;
+    const text  = encodeURIComponent(`🎬 ${v.title}\n\n${APP_LINK}`);
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(APP_LINK)}&text=${encodeURIComponent('🎬 ' + v.title)}`, '_blank');
+  }
+
+  function shareCurrentVideo() {
+    if (!currentV) return;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(APP_LINK)}&text=${encodeURIComponent('🎬 ' + currentV.title)}`, '_blank');
+  }
+
+  /* ── RENDER HOME ── */
+  function renderHome() {
+    const bar = document.getElementById('categoryBar');
+    bar.innerHTML = `<div class="cat-chip active-cat" id="chip-All" onclick="openSheet('All')">All</div>`;
+    categories.forEach(c => {
+      const id = c.replace(/\s+/g, '');
+      bar.innerHTML += `<div class="cat-chip" id="chip-${id}" onclick="openSheet('${c}')">${c}</div>`;
+    });
+    renderVideoGrid('mainVideoList', videos.slice(0, 10));
+  }
+
+  /* ── OPEN SHEET ── */
+  function openSheet(cat) {
+    if (cat === 'All') return;
+
+    document.getElementById('sheetTitle').innerText       = cat;
+    document.getElementById('sheetOverlay').style.display = 'block';
+    document.getElementById('videoSheet').classList.add('active');
+
+    const listEl = document.getElementById('sheetVideoList');
+
+    /* Premium category → promo card only */
+    if (cat === PREMIUM_CAT_NAME) {
+      listEl.style.display = 'block';
+      listEl.innerHTML = `
+        <div class="sheet-promo-wrap">
+          <div class="sheet-promo-card">
+            <span class="spc-icon">🔥</span>
+            <div class="spc-badge">⭐ PREMIUM ACCESS</div>
+            <div class="spc-title">ভাইরাল ভিডিও প্রিমিয়াম</div>
+            <div class="spc-msg">যেকোনো ধরনের ভিডিও দেখতে চাইলে আমাদের ওয়েবসাইট থেকে ঘুরে আসুন</div>
+            <a href="${PREMIUM_CAT_LINK}" target="_blank" rel="noopener" class="spc-btn">
+              <i class="fa fa-external-link-alt"></i> ওয়েবসাইট ভিজিট করুন
+            </a>
+          </div>
+        </div>`;
+      return;
+    }
+
+    listEl.style.display = '';
+    let filtered = videos.filter(v => v.category === cat);
+    if (cat === 'Favorites') filtered = videos.filter(v => favorites.includes(v.key));
+    if (cat === 'History')   filtered = videos.filter(v => watchHistory.includes(v.key)).reverse();
+    renderVideoGrid('sheetVideoList', filtered);
+  }
+
+  /* ── RENDER VIDEO GRID (with Share + Fav icons) ── */
+  function renderVideoGrid(targetId, data) {
+    const list = document.getElementById(targetId);
+    list.innerHTML = '';
+    data.forEach(v => {
+      const isFav = favorites.includes(v.key);
+      const card  = document.createElement('div');
+      card.className = 'video-card';
+      card.innerHTML = `
+        <!-- Share top-left -->
+        <div class="share-btn" onclick="shareVideo('${v.key}',event)" title="Share">
+          <i class="fa fa-share-alt"></i>
+        </div>
+        <!-- Fav top-right -->
+        <div class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${v.key}',event)">
+          <i class="fa fa-heart"></i>
+        </div>
+        <div onclick="openOptions('${v.key}')">
+          <img src="${v.thumb}" loading="lazy" alt="${v.title}">
+          <div class="video-title">${v.title}</div>
+        </div>`;
+      list.appendChild(card);
+    });
+  }
+
+  /* ── OPTIONS MODAL ── */
+  function openOptions(key) {
+    currentV = videos.find(v => v.key === key);
+    adCount  = 0;
+    document.getElementById('modalTitle').innerText       = currentV.title;
+    document.getElementById('modalThumb').src             = currentV.thumb;
+    document.getElementById('watchAdBtn').innerText       = 'WATCH AD TO UNLOCK (0/3)';
+    document.getElementById('watchAdBtn').style.display   = 'block';
+    document.getElementById('playNowBtn').style.display   = 'none';
+    document.getElementById('optionsModal').style.display = 'flex';
+  }
+
+  document.getElementById('watchAdBtn').onclick = () => {
+    if (typeof window.show_10799185 === 'function')
+      window.show_10799185().then(() => step()).catch(() => step());
+    else step();
+  };
+
+  function step() {
+    adCount++;
+    document.getElementById('watchAdBtn').innerText = `DONE ${adCount}/3`;
+    if (adCount >= 3) {
+      db.ref('users/' + userId + '/points').transaction(p => (p || 0) + 5);
+      document.getElementById('watchAdBtn').style.display = 'none';
+      document.getElementById('playNowBtn').style.display = 'block';
+    }
+  }
+
+  document.getElementById('playNowBtn').onclick = () => {
+    closeModal();
+    let link = currentV.link;
+    if (link.includes('drive.google.com/file/d/')) {
+      const fid = link.split('/file/d/')[1].split('/')[0];
+      link = `https://drive.google.com/preview?id=${fid}`;
+    }
+    document.getElementById('nowPlayingTitle').innerText    = currentV.title;
+    document.getElementById('mainPlayerIframe').src         = link;
+    document.getElementById('sheetOverlay').style.display   = 'block';
+    document.getElementById('videoPlayerSheet').classList.add('active');
+    window.Telegram?.WebApp?.expand();
+    watchHistory = watchHistory.filter(id => id !== currentV.key);
+    watchHistory.push(currentV.key);
+    localStorage.setItem('watch_history', JSON.stringify(watchHistory));
+  };
+
+  /* ── PROFILE SHEET ── */
+  function openProfileSheet() {
+    document.getElementById('sheetOverlay').style.display = 'block';
+    document.getElementById('profileSheet').classList.add('active');
+  }
+
+  /* ── CLOSE ALL SHEETS ── */
+  function closeAllSheets() {
+    ['videoSheet','videoPlayerSheet','profileSheet'].forEach(id =>
+      document.getElementById(id).classList.remove('active')
+    );
+    document.getElementById('sheetOverlay').style.display = 'none';
+    document.getElementById('mainPlayerIframe').src = '';
+  }
+
+  /* ── HELPERS ── */
+  function applyAllChipActive() {
+    document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active-cat'));
+    document.getElementById('chip-All')?.classList.add('active-cat');
+  }
+  function openAutoAd()  { window.open(DIRECT_LINK_AD, '_blank'); document.getElementById('autoAdModal').style.display = 'none'; }
+  function closeModal()  { document.getElementById('optionsModal').style.display = 'none'; }
+  function searchMainVideos() {
+    const t = document.getElementById('searchInput').value.toLowerCase();
+    renderVideoGrid('mainVideoList', videos.filter(v => v.title.toLowerCase().includes(t)));
+  }
+  function toggleFav(k, e) {
+    e.stopPropagation();
+    favorites = favorites.includes(k) ? favorites.filter(f => f !== k) : [...favorites, k];
+    localStorage.setItem('favs', JSON.stringify(favorites));
+    renderHome();
+  }
+  function copyRef() {
+    navigator.clipboard.writeText(document.getElementById('profileRefLink').innerText)
+      .then(() => alert('✅ Copied!'));
+  }
+
+  init();
+</script>
+</body>
+</html>
