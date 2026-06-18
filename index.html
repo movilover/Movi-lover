@@ -289,23 +289,9 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .auth-field-wrap{margin-bottom:11px;text-align:left}
 .auth-field-label{font-size:10px;font-weight:700;color:var(--t2);margin-bottom:5px;display:block}
 .phone-input-row{display:flex;gap:6px;align-items:stretch}
-.country-code-btn{display:flex;align-items:center;gap:4px;padding:0 10px;height:44px;border-radius:10px;background:var(--bg3);border:1.5px solid rgba(229,0,0,.2);color:var(--t1);font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.country-code-btn{display:flex;align-items:center;gap:4px;padding:0 10px;height:44px;border-radius:10px;background:var(--bg3);border:1.5px solid rgba(229,0,0,.2);color:var(--t1);font-size:12px;font-weight:700;cursor:default;flex-shrink:0;white-space:nowrap}
 .country-code-btn .flag{font-size:16px}
 .country-code-btn .code{font-size:11px;font-weight:800;color:var(--gold)}
-.country-code-btn .arrow{font-size:8px;color:var(--t3);margin-left:2px}
-#countryDropdown{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--bg2);border:1.5px solid rgba(229,0,0,.3);border-radius:16px;width:min(320px,90vw);max-height:60vh;overflow:hidden;display:none;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.8)}
-#countryDropdown.show{display:flex}
-.cdd-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.cdd-search{flex:1;padding:8px 12px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);color:var(--t1);font-size:12px;outline:none;font-family:'Poppins',sans-serif}
-.cdd-close{width:30px;height:30px;border-radius:8px;background:var(--bg4);border:none;color:var(--t2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.cdd-list{overflow-y:auto;flex:1}
-.cdd-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:.15s}
-.cdd-item:hover{background:rgba(229,0,0,.08)}
-.cdd-flag{font-size:18px;flex-shrink:0}
-.cdd-name{flex:1;font-size:11px;font-weight:600;color:var(--t1)}
-.cdd-code{font-size:11px;font-weight:800;color:var(--gold)}
-.cdd-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.6);display:none}
-.cdd-overlay.show{display:block}
 .auth-inp{width:100%;padding:0 14px;height:44px;border-radius:10px;background:var(--bg3);border:1.5px solid rgba(229,0,0,.2);color:var(--t1);font-size:13px;font-family:'Poppins',sans-serif;font-weight:500;outline:none;transition:.2s}
 .auth-inp:focus{border-color:var(--red)}
 .auth-inp::placeholder{color:var(--t4);font-size:12px}
@@ -625,16 +611,6 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-<!-- COUNTRY DROPDOWN -->
-<div class="cdd-overlay" id="cddOverlay" onclick="closeCountryDD()"></div>
-<div id="countryDropdown">
-  <div class="cdd-header">
-    <input class="cdd-search" id="cddSearch" placeholder="দেশ খুঁজুন..." oninput="filterCountries(this.value)">
-    <button class="cdd-close" onclick="closeCountryDD()"><i class="fa fa-times"></i></button>
-  </div>
-  <div class="cdd-list" id="cddList"></div>
-</div>
-
 <!-- BAN MODAL -->
 <div id="banModal">
   <div class="ban-box">
@@ -670,11 +646,11 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
     <div class="auth-field-wrap">
       <label class="auth-field-label">📱 ফোন নম্বর</label>
       <div class="phone-input-row">
-        <button class="country-code-btn" id="ccBtn" onclick="openCountryDD()">
+        <!-- ★ শুধুমাত্র বাংলাদেশ (+880) — ক্লিক করে পরিবর্তন করা যাবে না -->
+        <div class="country-code-btn" id="ccBtn">
           <span class="flag" id="ccFlag">🇧🇩</span>
           <span class="code" id="ccCode">+880</span>
-          <span class="arrow">▼</span>
-        </button>
+        </div>
         <input class="auth-inp" id="authPhone" type="tel" placeholder="01XXXXXXXXX" maxlength="12" style="flex:1">
       </div>
     </div>
@@ -1006,24 +982,17 @@ let pendingSpinCoins=0,payLogos={};
 let lastPts=0,recognition=null;
 let gen1Members=[],gen2Members=[],gen3Members=[];
 let adminChatListener=null;
-let selCountry={flag:'🇧🇩',code:'+880',name:'Bangladesh'};
 let rgbBtnCfg={show:false,label:'এখনই দেখুন',icon:'fa-play-circle',url:'',color:'rgb',target:'inapp'};
 let adState={active:false,timerSec:15,remaining:15,reward:0,type:null,vidKey:null,netKey:null,wrongClicks:0,maxWrong:3,intervalId:null,timerDone:false};
 let spinAdState={active:false,timerSec:15,remaining:15,intervalId:null};
 
 // ════════════════════════════════════════════════════════════
-//  ★★★ CODE MANAGER — LIVE PATCH SYSTEM
+//  ★★★ CODE MANAGER — LIVE PATCH SYSTEM (এডমিন → ইউজার সাইট সিঙ্ক)
 //  Firebase: codeFeatures/<key>/code ↔ executes dynamically
 // ════════════════════════════════════════════════════════════
-let cmLoadedFeatures={};    // cache of last-loaded code
-let cmPatchListeners={};    // per-feature Firebase listeners
-let cmFirstLoad=true;       // suppress indicator on first load
+let cmLoadedFeatures={};
+let cmFirstLoad=true;
 
-/**
- * Bootstrap Code Manager:
- * 1. Load all features once (so nothing is missing at startup)
- * 2. Then subscribe to real-time changes — on change, re-execute
- */
 function initCodeManager(){
   db.ref('codeFeatures').on('value',snap=>{
     const features=snap.val()||{};
@@ -1037,7 +1006,6 @@ function initCodeManager(){
           anyChanged=true;
           executePatch(key,newCode);
         }else{
-          // First load — just execute silently
           safeExecCode(key,newCode);
         }
       }
@@ -1047,27 +1015,21 @@ function initCodeManager(){
   });
 }
 
-/** Safely execute code from a feature patch */
 function safeExecCode(key,code){
   if(!code||!code.trim())return;
   try{
-    // Wrap in IIFE to avoid polluting global scope accidentally
-    // but still allow global function declarations (function foo(){})
     const wrapped=`(function(){\ntry{\n${code}\n}catch(e){console.warn('[CM:${key}] exec error:',e);}\n})();`;
-    // eslint-disable-next-line no-new-func
     new Function(wrapped)();
   }catch(e){
     console.warn(`[CodeManager] Failed to execute feature "${key}":`,e);
   }
 }
 
-/** Execute a live patch and show indicator */
 function executePatch(key,code){
   console.log(`[CodeManager] 🔄 Live patch: ${key}`);
   safeExecCode(key,code);
 }
 
-/** Show live update indicator briefly */
 function showCmLiveIndicator(){
   const el=document.getElementById('cmLiveIndicator');
   if(!el)return;
@@ -1076,7 +1038,7 @@ function showCmLiveIndicator(){
 }
 
 // ════════════════════════════════════════════════════════════
-//  AD DAILY LIMIT (Firebase-synced)
+//  AD DAILY LIMIT
 // ════════════════════════════════════════════════════════════
 function getTodayKey(){const d=new Date();return`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;}
 function isTaskDone(key){return !!(JSON.parse(localStorage.getItem('tasksDone_'+getTodayKey())||'{}'))[key];}
@@ -1086,25 +1048,20 @@ async function getAdUsedFirebase(netKey){const uid=curUser?.uid||(tgUser?'tg_'+t
 async function incAdUsed(netKey){const cur=getAdUsedLocal(netKey)+1;localStorage.setItem('adUsed_v4_'+netKey+'_'+getTodayKey(),cur);const uid=curUser?.uid||(tgUser?'tg_'+tgUser.id:null);if(uid)try{await db.ref(`users/${uid}/adUsed/${getTodayKey()}/${netKey}`).set(cur);}catch(e){}}
 
 // ════════════════════════════════════════════════════════════
-//  COUNTRY LIST
+//  ★ COUNTRY — শুধুমাত্র বাংলাদেশ (+880)
 // ════════════════════════════════════════════════════════════
 const COUNTRIES=[
-  {flag:'🇧🇩',code:'+880',name:'Bangladesh'},{flag:'🇮🇳',code:'+91',name:'India'},{flag:'🇵🇰',code:'+92',name:'Pakistan'},
-  {flag:'🇺🇸',code:'+1',name:'USA'},{flag:'🇬🇧',code:'+44',name:'UK'},{flag:'🇸🇦',code:'+966',name:'Saudi Arabia'},
-  {flag:'🇦🇪',code:'+971',name:'UAE'},{flag:'🇲🇾',code:'+60',name:'Malaysia'},{flag:'🇸🇬',code:'+65',name:'Singapore'},
-  {flag:'🇶🇦',code:'+974',name:'Qatar'},{flag:'🇰🇼',code:'+965',name:'Kuwait'},{flag:'🇧🇭',code:'+973',name:'Bahrain'},
-  {flag:'🇴🇲',code:'+968',name:'Oman'},{flag:'🇳🇵',code:'+977',name:'Nepal'},{flag:'🇱🇰',code:'+94',name:'Sri Lanka'},
-  {flag:'🇮🇩',code:'+62',name:'Indonesia'},{flag:'🇵🇭',code:'+63',name:'Philippines'},{flag:'🇨🇦',code:'+1',name:'Canada'},
-  {flag:'🇦🇺',code:'+61',name:'Australia'},{flag:'🇩🇪',code:'+49',name:'Germany'},{flag:'🇫🇷',code:'+33',name:'France'},
-  {flag:'🇷🇺',code:'+7',name:'Russia'},{flag:'🇨🇳',code:'+86',name:'China'},{flag:'🇯🇵',code:'+81',name:'Japan'},
-  {flag:'🇰🇷',code:'+82',name:'South Korea'},{flag:'🇹🇷',code:'+90',name:'Turkey'},{flag:'🇪🇬',code:'+20',name:'Egypt'},
-  {flag:'🇳🇬',code:'+234',name:'Nigeria'},{flag:'🇧🇷',code:'+55',name:'Brazil'},{flag:'🇲🇽',code:'+52',name:'Mexico'},
+  {flag:'🇧🇩',code:'+880',name:'Bangladesh'},
 ];
-function openCountryDD(){document.getElementById('countryDropdown').classList.add('show');document.getElementById('cddOverlay').classList.add('show');document.getElementById('cddSearch').value='';renderCountryList(COUNTRIES);setTimeout(()=>document.getElementById('cddSearch').focus(),100);}
-function closeCountryDD(){document.getElementById('countryDropdown').classList.remove('show');document.getElementById('cddOverlay').classList.remove('show');}
-function renderCountryList(list){document.getElementById('cddList').innerHTML=list.map(c=>`<div class="cdd-item" onclick="selectCountry('${c.flag}','${c.code}','${c.name}')"><span class="cdd-flag">${c.flag}</span><span class="cdd-name">${c.name}</span><span class="cdd-code">${c.code}</span></div>`).join('');}
-function filterCountries(q){const f=COUNTRIES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.code.includes(q));renderCountryList(f);}
-function selectCountry(flag,code,name){selCountry={flag,code,name};document.getElementById('ccFlag').innerText=flag;document.getElementById('ccCode').innerText=code;closeCountryDD();}
+
+// Country dropdown functions — নিষ্ক্রিয় (শুধু Bangladesh আছে)
+function openCountryDD(){/* disabled — only Bangladesh */}
+function closeCountryDD(){/* disabled */}
+function renderCountryList(list){}
+function filterCountries(q){}
+function selectCountry(flag,code,name){}
+
+let selCountry={flag:'🇧🇩',code:'+880',name:'Bangladesh'};
 
 // ════════════════════════════════════════════════════════════
 //  SOUND
@@ -1147,7 +1104,7 @@ function init(){
   });
   auth.getRedirectResult().then(r=>{if(r&&r.user)afterLogin(r.user);}).catch(()=>{});
 
-  // ★ INIT CODE MANAGER — listen to Firebase feature patches
+  // ★ CODE MANAGER — এডমিন প্যানেল পরিবর্তন → ইউজার সাইটে লাইভ আপডেট
   initCodeManager();
 
   db.ref('/').on('value',snap=>{
@@ -1622,12 +1579,13 @@ function updatePremUI(){if(isPrem){document.getElementById('adBanTop').style.dis
 function submitPhoneForm(){
   const name=document.getElementById('authName').value.trim();const phone=document.getElementById('authPhone').value.trim();const email=document.getElementById('authEmail').value.trim();
   if(!name){toast('নাম লিখুন!');return;}if(!phone||phone.length<7){toast('সঠিক ফোন নম্বর দিন!');return;}
-  const fullPhone=selCountry.code+phone.replace(/^0/,'').replace(/\D/g,'');
+  // সবসময় বাংলাদেশ (+880) ব্যবহার করা হবে
+  const fullPhone='+880'+phone.replace(/^0/,'').replace(/\D/g,'');
   toast('একাউন্ট তৈরি হচ্ছে...');
   auth.signInAnonymously().then(result=>{
     const u=result.user;const uid=u.uid;
-    const userData={points:0,joined:Date.now(),name,phoneNumber:fullPhone,countryCode:selCountry.code,countryFlag:selCountry.flag,email:email||null,loginType:'phone_form',referralCount:0,strikes:0};
-    db.ref('users/'+uid).once('value',snap=>{if(!snap.val())db.ref('users/'+uid).set(userData);else db.ref('users/'+uid).update({name,phoneNumber:fullPhone,countryCode:selCountry.code,email:email||null});});
+    const userData={points:0,joined:Date.now(),name,phoneNumber:fullPhone,countryCode:'+880',countryFlag:'🇧🇩',email:email||null,loginType:'phone_form',referralCount:0,strikes:0};
+    db.ref('users/'+uid).once('value',snap=>{if(!snap.val())db.ref('users/'+uid).set(userData);else db.ref('users/'+uid).update({name,phoneNumber:fullPhone,countryCode:'+880',email:email||null});});
     uName=name;uPhone=fullPhone;uEmail=email;closeAuthModal();updateProfUI();handleRef(uid);toast(`✅ স্বাগতম, ${name}!`);
   }).catch(e=>{toast('❌ '+e.message);});
 }
