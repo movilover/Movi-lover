@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Movie Lover</title>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Icons & Fonts (non-blocking) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════
+   ROOT VARIABLES
+══════════════════════════════════════════════ */
+:root{
+  --red:#e50000;--red2:#b30000;--gold:#ffc107;--gold2:#e6a800;
+  --bg0:#020202;--bg1:#080808;--bg2:#101010;--bg3:#161616;--bg4:#1c1c1c;
+  --border:#1e1e1e;--t1:#fff;--t2:#aaa;--t3:#555;
+  --green:#16a34a;--blue:#0088cc;--purple:#7c3aed;
+  --radius:14px;--safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Poppins',sans-serif;background:var(--bg0);color:var(--t1);font-size:14px}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:#222;border-radius:3px}
+
+/* ══════════════════════════════════════════════
+   SPLASH / LOADER  — shown only during init
+══════════════════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:9999;
+  background:radial-gradient(ellipse at center,#1a0000 0%,#000 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  transition:opacity .4s ease;
+}
+#splash.hide{opacity:0;pointer-events:none}
+.spl-logo{font-size:28px;font-weight:900;letter-spacing:3px}
+.spl-logo span{color:var(--red)}
+.spl-logo sup{font-size:8px;background:var(--gold);color:#000;padding:1px 6px;border-radius:5px;vertical-align:super;margin-left:3px;font-weight:800}
+.spl-spinner{width:38px;height:38px;border:3px solid rgba(229,0,0,.15);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+.spl-txt{font-size:11px;color:var(--t3);letter-spacing:1px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════════════
+   APP SHELL — root layout
+══════════════════════════════════════════════ */
+#app{
+  display:flex;flex-direction:column;height:100%;
+  overflow:hidden;
+  /* Hidden until data is ready */
+  opacity:0;transition:opacity .35s ease;
+}
+#app.ready{opacity:1}
+
+/* ══════════════════════════════════════════════
+   NOTICE BAR
+══════════════════════════════════════════════ */
+#noticeBar{
+  background:linear-gradient(90deg,var(--red),#ff4d00);
+  font-size:11px;font-weight:700;color:#fff;
+  padding:6px 14px;text-align:center;
+  display:none;white-space:nowrap;overflow:hidden;
+  position:relative;
+}
+.nb-inner{display:inline-block;animation:marquee 22s linear infinite}
+@keyframes marquee{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+
+/* ══════════════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════════════ */
+#topbar{
+  flex-shrink:0;height:52px;
+  background:rgba(2,2,2,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;position:relative;z-index:100;
+}
+.tb-logo{font-size:16px;font-weight:900;letter-spacing:1.5px;cursor:pointer}
+.tb-logo span{color:var(--red)}
+.tb-logo sup{font-size:7px;background:var(--gold);color:#000;padding:1px 5px;border-radius:5px;vertical-align:super;margin-left:2px;font-weight:800}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-icon{width:34px;height:34px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;color:var(--t2);transition:.2s}
+.tb-icon:active{transform:scale(.92)}
+.tb-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:7px;font-weight:800;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none}
+
+/* ══════════════════════════════════════════════
+   PAGES — scrollable area
+══════════════════════════════════════════════ */
+#pages{
+  flex:1;overflow:hidden;position:relative;
+}
+.page{
+  position:absolute;inset:0;overflow-y:auto;
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.page.active{display:block}
+
+/* ══════════════════════════════════════════════
+   BOTTOM NAV
+══════════════════════════════════════════════ */
+#bnav{
+  flex-shrink:0;
+  background:rgba(4,4,4,.98);backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  padding-bottom:var(--safe-bot);
+  height:calc(56px + var(--safe-bot));
+}
+.bn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:8px 0;cursor:pointer;color:var(--t3);transition:.2s;
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  position:relative;
+}
+.bn i{font-size:17px;transition:.2s}
+.bn.active{color:var(--red)}
+.bn.active i{color:var(--red)}
+.bn-center{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;position:relative;
+}
+.bn-center-btn{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--red),var(--red2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:#fff;box-shadow:0 4px 14px rgba(229,0,0,.4);
+  margin-top:-24px;border:3px solid var(--bg0);transition:.2s;
+}
+.bn-center-btn:active{transform:scale(.92)}
+.bn-center-lbl{font-size:8px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+
+/* ══════════════════════════════════════════════
+   HOME PAGE CONTENT
+══════════════════════════════════════════════ */
+.page-inner{padding:12px 12px 12px;max-width:600px;margin:0 auto}
+
+/* Hero Slider */
+#heroWrap{border-radius:18px;overflow:hidden;margin-bottom:14px;position:relative;background:var(--bg2);min-height:190px;display:none}
+.hero-slide{position:absolute;inset:0;opacity:0;transition:opacity .5s ease}
+.hero-slide.active{opacity:1;position:relative}
+.hero-slide img{width:100%;height:190px;object-fit:cover;display:block}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 50%)}
+.hero-info{position:absolute;bottom:12px;left:14px;right:60px}
+.hero-cat{font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.hero-title{font-size:14px;font-weight:800;line-height:1.3;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.hero-play{
+  position:absolute;bottom:10px;right:12px;
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--red),var(--red2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;cursor:pointer;
+  box-shadow:0 4px 14px rgba(229,0,0,.5);transition:.2s;
+}
+.hero-play:active{transform:scale(.9)}
+.hero-dots{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.hero-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;transition:.2s}
+.hero-dot.active{background:var(--red);width:14px;border-radius:3px}
+
+/* Section header */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:4px}
+.sec-ttl{font-size:13px;font-weight:800}
+.sec-more{font-size:10px;color:var(--red);font-weight:700;cursor:pointer}
+
+/* Category chips */
+.cat-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:14px}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-chip{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:22px;
+  background:var(--bg3);border:1px solid var(--border);
+  font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;color:var(--t2);transition:.2s;flex-shrink:0;
+}
+.cat-chip.active{background:rgba(229,0,0,.12);border-color:rgba(229,0,0,.4);color:var(--red)}
+.cat-chip img,.cat-chip-icon{width:20px;height:20px;border-radius:6px;object-fit:cover}
+
+/* Movie grid */
+.mov-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px}
+@media(min-width:400px){.mov-grid{grid-template-columns:repeat(3,1fr)}}
+.mov-card{border-radius:12px;overflow:hidden;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:.18s;position:relative}
+.mov-card:active{transform:scale(.96)}
+.mov-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg4)}
+.mov-thumb-wrap{position:relative}
+.mov-play-ic{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.3);opacity:0;transition:.2s;
+}
+.mov-card:hover .mov-play-ic{opacity:1}
+.mov-play-ic i{font-size:26px;color:#fff;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+.mov-info{padding:8px 9px 9px}
+.mov-title{font-size:11px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.mov-meta{display:flex;align-items:center;justify-content:space-between}
+.mov-cat{font-size:9px;color:var(--t3)}
+.mov-prem-badge{font-size:7px;font-weight:800;background:rgba(255,193,7,.12);color:var(--gold);border:1px solid rgba(255,193,7,.25);padding:2px 6px;border-radius:5px}
+.wl-btn{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;transition:.2s}
+.wl-btn.saved{color:var(--gold)}
+.wl-btn:active{transform:scale(.88)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--t3)}
+.empty-state i{font-size:36px;margin-bottom:12px;opacity:.3;display:block}
+.empty-state p{font-size:12px}
+
+/* ══════════════════════════════════════════════
+   VIDEO PLAYER OVERLAY
+══════════════════════════════════════════════ */
+#playerOverlay{
+  position:fixed;inset:0;z-index:5000;
+  background:#000;display:none;flex-direction:column;
+}
+#playerOverlay.show{display:flex}
+#playerFrame{width:100%;flex:1;border:none;background:#000}
+.plyr-topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:rgba(0,0,0,.9);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.plyr-back{width:34px;height:34px;border-radius:9px;background:var(--bg3);border:none;color:var(--t1);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.plyr-title{flex:1;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ══════════════════════════════════════════════
+   AD OVERLAY
+══════════════════════════════════════════════ */
+#adOverlay{
+  position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.96);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+#adOverlay.show{display:flex}
+.ao-timer{width:72px;height:72px;border-radius:50%;border:4px solid rgba(255,255,255,.1);position:relative;display:flex;align-items:center;justify-content:center}
+.ao-timer-fill{position:absolute;inset:0;border-radius:50%;border:4px solid var(--red);clip-path:inset(0 50% 0 0);transition:none}
+.ao-timer-txt{font-size:22px;font-weight:900;color:var(--red)}
+.ao-txt{font-size:13px;color:var(--t2);text-align:center;line-height:1.6;max-width:280px}
+.ao-close{
+  padding:13px 32px;border-radius:12px;font-size:13px;font-weight:800;
+  cursor:pointer;border:none;font-family:'Poppins',sans-serif;
+  background:var(--bg4);color:var(--t3);pointer-events:none;transition:.3s;
+}
+.ao-close.active{background:linear-gradient(90deg,var(--red),var(--red2));color:#fff;pointer-events:auto;box-shadow:0 4px 14px rgba(229,0,0,.4)}
+
+/* ══════════════════════════════════════════════
+   TASK PAGE
+══════════════════════════════════════════════ */
+.task-notice{
+  background:linear-gradient(135deg,rgba(229,0,0,.12),rgba(229,0,0,.04));
+  border:1px solid rgba(229,0,0,.25);border-radius:14px;
+  padding:13px 14px;margin-bottom:14px;
+}
+.tn-icon{font-size:20px;margin-bottom:6px;display:block}
+.tn-title{font-size:12px;font-weight:800;margin-bottom:4px}
+.tn-msg{font-size:11px;color:var(--t2);line-height:1.6}
+.task-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;margin-bottom:12px;
+}
+.tc-header{
+  background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(124,58,237,.06));
+  border-bottom:1px solid rgba(124,58,237,.2);padding:14px;
+  display:flex;align-items:center;gap:12px;
+}
+.tc-logo{width:44px;height:44px;border-radius:12px;object-fit:cover;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.tc-logo img{width:100%;height:100%;object-fit:cover}
+.tc-name{font-size:13px;font-weight:800;color:#c4b5fd}
+.tc-desc{font-size:10px;color:var(--t3);margin-top:2px}
+.tc-body{padding:14px}
+.tc-reward{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.tc-pts{font-size:20px;font-weight:900;color:var(--gold)}
+.tc-pts-lbl{font-size:10px;color:var(--t3)}
+.tc-limit{font-size:10px;color:var(--t3);margin-left:auto}
+.tc-btn{
+  width:100%;padding:13px;border-radius:12px;border:none;
+  font-size:12px;font-weight:800;cursor:pointer;
+  font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(90deg,var(--purple),#5b21b6);color:#fff;transition:.2s;
+}
+.tc-btn:active{transform:scale(.97);opacity:.88}
+.tc-btn:disabled{background:var(--bg4);color:var(--t3);pointer-events:none}
+.tc-done{
+  width:100%;padding:13px;border-radius:12px;background:rgba(22,163,74,.1);
+  border:1px solid rgba(22,163,74,.25);color:#4ade80;
+  font-size:12px;font-weight:800;text-align:center;
+}
+.tc-progress{margin-bottom:10px}
+.tcp-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:4px}
+.tcp-fill{height:100%;background:linear-gradient(90deg,var(--purple),#c4b5fd);border-radius:3px;transition:width .4s}
+
+/* ══════════════════════════════════════════════
+   EARN / LEADERBOARD PAGE
+══════════════════════════════════════════════ */
+.earn-hero{
+  background:linear-gradient(135deg,rgba(255,193,7,.12),rgba(255,193,7,.04));
+  border:1.5px solid rgba(255,193,7,.25);border-radius:18px;
+  padding:20px;margin-bottom:14px;text-align:center;
+}
+.eh-pts{font-size:38px;font-weight:900;color:var(--gold);line-height:1}
+.eh-pts-lbl{font-size:11px;color:var(--t3);margin-top:4px}
+.eh-bal{font-size:18px;font-weight:800;color:var(--green);margin-top:8px}
+.eh-bal-lbl{font-size:10px;color:var(--t3)}
+.earn-stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px}
+.est{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.est-val{font-size:16px;font-weight:900;color:#fff}
+.est-lbl{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg4);border-radius:10px;margin-bottom:6px}
+.lb-rank{width:24px;font-size:13px;font-weight:900;text-align:center;flex-shrink:0}
+.lb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red2));display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;overflow:hidden}
+.lb-av img{width:100%;height:100%;object-fit:cover}
+.lb-name{flex:1;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-pts{font-size:12px;font-weight:800;color:var(--gold)}
+
+/* ══════════════════════════════════════════════
+   WALLET PAGE
+══════════════════════════════════════════════ */
+.wallet-hero{
+  background:linear-gradient(135deg,rgba(22,163,74,.12),rgba(22,163,74,.04));
+  border:1.5px solid rgba(22,163,74,.25);border-radius:18px;
+  padding:20px;margin-bottom:14px;text-align:center;
+}
+.wh-bal{font-size:34px;font-weight:900;color:var(--green);line-height:1}
+.wh-bal-lbl{font-size:10px;color:var(--t3);margin-top:4px}
+.wh-pts{font-size:14px;font-weight:700;color:var(--gold);margin-top:10px}
+.wallet-meth-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.wm-card{
+  background:var(--bg3);border:2px solid var(--border);border-radius:12px;
+  padding:14px;text-align:center;cursor:pointer;transition:.2s;
+}
+.wm-card.active{border-color:var(--green)}
+.wm-card img{width:48px;height:30px;object-fit:contain;margin:0 auto 6px;display:block}
+.wm-name{font-size:11px;font-weight:700;color:var(--t2)}
+.wd-form{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px}
+.inp{width:100%;padding:12px 14px;border-radius:11px;background:var(--bg1);border:1px solid var(--border);color:#fff;font-size:13px;outline:none;font-family:'Poppins',sans-serif;margin-bottom:9px;transition:.2s}
+.inp:focus{border-color:var(--red)}
+.inp::placeholder{color:var(--t3)}
+.lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block;margin-top:4px}
+.btn-main{
+  width:100%;padding:13px;border-radius:12px;border:none;
+  font-size:13px;font-weight:800;cursor:pointer;
+  font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(90deg,var(--green),#0e7a35);color:#fff;transition:.2s;
+}
+.btn-main:active{transform:scale(.97);opacity:.88}
+.btn-main.red{background:linear-gradient(90deg,var(--red),var(--red2))}
+.btn-main:disabled{background:var(--bg4);color:var(--t3);pointer-events:none}
+.wd-history-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:11px;
+  padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;
+}
+.whi-left{flex:1}
+.whi-method{font-size:11px;font-weight:700}
+.whi-num{font-size:10px;color:var(--t2)}
+.whi-ts{font-size:9px;color:var(--t3);margin-top:2px}
+.whi-right{text-align:right}
+.whi-taka{font-size:13px;font-weight:800;color:var(--green)}
+.whi-status{font-size:9px;padding:2px 8px;border-radius:5px;font-weight:700;margin-top:3px;display:inline-block}
+.s-paid{background:rgba(22,163,74,.12);color:#4ade80;border:1px solid rgba(22,163,74,.2)}
+.s-pend{background:rgba(255,193,7,.1);color:var(--gold);border:1px solid rgba(255,193,7,.2)}
+.s-rej{background:rgba(229,0,0,.1);color:var(--red);border:1px solid rgba(229,0,0,.2)}
+
+/* ══════════════════════════════════════════════
+   PROFILE PAGE
+══════════════════════════════════════════════ */
+.prof-header{
+  background:linear-gradient(135deg,rgba(229,0,0,.12),rgba(229,0,0,.04));
+  border:1.5px solid rgba(229,0,0,.2);border-radius:18px;
+  padding:20px;margin-bottom:14px;display:flex;align-items:center;gap:16px;
+}
+.prof-av{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--red),var(--red2));
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  overflow:hidden;border:3px solid rgba(229,0,0,.3);
+}
+.prof-av img{width:100%;height:100%;object-fit:cover}
+.prof-name{font-size:16px;font-weight:800}
+.prof-id{font-size:10px;color:var(--t3);margin-top:2px;word-break:break-all}
+.prof-badge{font-size:9px;font-weight:800;padding:3px 9px;border-radius:6px;margin-top:6px;display:inline-block}
+.pb-prem{background:rgba(255,193,7,.12);color:var(--gold);border:1px solid rgba(255,193,7,.25)}
+.pb-free{background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--border)}
+.prof-stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px}
+.pstat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px;text-align:center}
+.pstat-val{font-size:18px;font-weight:900;color:#fff}
+.pstat-lbl{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.ref-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;
+}
+.ref-link-row{
+  display:flex;align-items:center;gap:8px;background:var(--bg1);
+  border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+}
+.ref-link-txt{flex:1;font-size:10px;color:var(--t2);word-break:break-all;font-family:monospace}
+.ref-copy{
+  padding:7px 13px;border-radius:8px;background:linear-gradient(90deg,var(--red),var(--red2));
+  border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;
+  font-family:'Poppins',sans-serif;transition:.2s;
+}
+.ref-copy:active{transform:scale(.94)}
+.menu-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.18s;
+}
+.menu-item:active{transform:scale(.98);opacity:.85}
+.mi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.mi-txt{flex:1}
+.mi-label{font-size:12px;font-weight:700}
+.mi-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.mi-arr{color:var(--t3);font-size:12px}
+
+/* ══════════════════════════════════════════════
+   AUTH MODAL
+══════════════════════════════════════════════ */
+#authModal{
+  position:fixed;inset:0;z-index:6000;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(10px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+#authModal.show{display:flex}
+.auth-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:24px 24px 0 0;padding:24px 18px 32px;
+  width:100%;max-width:480px;
+}
+.auth-ttl{font-size:18px;font-weight:900;margin-bottom:4px}
+.auth-sub{font-size:11px;color:var(--t3);margin-bottom:20px}
+.country-row{display:flex;gap:8px;margin-bottom:9px}
+.country-sel{
+  padding:12px 10px;border-radius:11px;background:var(--bg1);border:1px solid var(--border);
+  color:#fff;font-size:12px;outline:none;font-family:'Poppins',sans-serif;min-width:90px;
+}
+.auth-or{text-align:center;font-size:11px;color:var(--t3);margin:14px 0;position:relative}
+.auth-or::before,.auth-or::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
+.auth-or::before{left:0}.auth-or::after{right:0}
+
+/* ══════════════════════════════════════════════
+   INBOX / NOTIFICATIONS
+══════════════════════════════════════════════ */
+.inbox-modal{
+  position:fixed;inset:0;z-index:5500;
+  background:rgba(0,0,0,.9);backdrop-filter:blur(10px);
+  display:none;flex-direction:column;
+}
+.inbox-modal.show{display:flex}
+.inbox-hdr{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  background:rgba(2,2,2,.97);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.inbox-back{width:34px;height:34px;border-radius:9px;background:var(--bg3);border:none;color:var(--t1);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.inbox-body{flex:1;overflow-y:auto;padding:12px}
+.inbox-item{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:13px 14px;margin-bottom:9px;
+}
+.inbox-item.unread{border-color:rgba(229,0,0,.3);background:rgba(229,0,0,.04)}
+.ii-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.ii-title{font-size:13px;font-weight:800}
+.ii-time{font-size:9px;color:var(--t3);flex-shrink:0;margin-left:8px;margin-top:2px}
+.ii-body{font-size:11px;color:var(--t2);line-height:1.6}
+.ii-bonus{font-size:11px;font-weight:800;color:var(--gold);margin-top:6px}
+.ii-btn{
+  display:inline-block;margin-top:8px;padding:7px 16px;border-radius:9px;
+  background:linear-gradient(90deg,var(--red),var(--red2));color:#fff;
+  font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;
+}
+
+/* ══════════════════════════════════════════════
+   POPUP NOTIFICATION
+══════════════════════════════════════════════ */
+#popupNotif{
+  position:fixed;inset:0;z-index:7000;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#popupNotif.show{display:flex}
+.pn-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:22px;
+  padding:24px 20px;width:100%;max-width:340px;text-align:center;
+}
+.pn-icon{font-size:42px;margin-bottom:10px;display:block}
+.pn-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.pn-body{font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:18px}
+.pn-btn{
+  display:block;width:100%;padding:13px;border-radius:12px;
+  background:linear-gradient(90deg,var(--red),var(--red2));color:#fff;
+  font-size:13px;font-weight:800;border:none;cursor:pointer;
+  font-family:'Poppins',sans-serif;text-decoration:none;margin-bottom:9px;
+}
+.pn-close{font-size:11px;color:var(--t3);cursor:pointer;text-decoration:underline}
+
+/* ══════════════════════════════════════════════
+   CHAT PAGE (Admin Chat)
+══════════════════════════════════════════════ */
+#chatPage{
+  position:fixed;inset:0;z-index:5000;
+  background:rgba(0,0,0,.95);backdrop-filter:blur(12px);
+  display:none;flex-direction:column;
+}
+#chatPage.show{display:flex}
+.chat-hdr{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(2,2,2,.97);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.chat-back{width:34px;height:34px;border-radius:9px;background:var(--bg3);border:none;color:var(--t1);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:80%;display:flex;flex-direction:column}
+.chat-msg.mine{align-self:flex-end;align-items:flex-end}
+.chat-msg.theirs{align-self:flex-start;align-items:flex-start}
+.chat-bubble{padding:10px 14px;border-radius:16px;font-size:12px;line-height:1.5;word-break:break-word}
+.chat-msg.mine .chat-bubble{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;border-radius:16px 16px 4px 16px}
+.chat-msg.theirs .chat-bubble{background:var(--bg3);border:1px solid var(--border);color:var(--t1);border-radius:16px 16px 16px 4px}
+.chat-time{font-size:8px;color:var(--t3);margin-top:3px}
+.chat-inp-row{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:rgba(2,2,2,.97);border-top:1px solid var(--border);flex-shrink:0;
+}
+.chat-inp{
+  flex:1;padding:10px 14px;border-radius:22px;
+  background:var(--bg3);border:1.5px solid var(--border);color:var(--t1);
+  font-size:12px;font-family:'Poppins',sans-serif;outline:none;
+  max-height:80px;overflow-y:auto;
+}
+.chat-inp:focus{border-color:rgba(229,0,0,.4)}
+.chat-send{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--red),var(--red2));
+  border:none;color:#fff;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ══════════════════════════════════════════════
+   PREMIUM MODAL
+══════════════════════════════════════════════ */
+#premModal{
+  position:fixed;inset:0;z-index:5500;
+  background:rgba(0,0,0,.9);backdrop-filter:blur(10px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+#premModal.show{display:flex}
+.prem-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:24px 24px 0 0;padding:20px 16px 30px;
+  width:100%;max-width:480px;max-height:85vh;overflow-y:auto;
+}
+.prem-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.prem-close{width:30px;height:30px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.pkg-card{
+  background:var(--bg3);border:2px solid var(--border);border-radius:14px;
+  padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:.18s;
+}
+.pkg-card.selected{border-color:var(--gold);background:rgba(255,193,7,.06)}
+.pkg-name{font-size:13px;font-weight:800}
+.pkg-price{font-size:18px;font-weight:900;color:var(--gold)}
+.pkg-dur{font-size:10px;color:var(--t3)}
+
+/* ══════════════════════════════════════════════
+   SPIN WHEEL
+══════════════════════════════════════════════ */
+.spin-wrap{position:relative;width:260px;height:260px;margin:0 auto 20px}
+#spinCanvas{width:260px;height:260px;border-radius:50%;box-shadow:0 0 30px rgba(229,0,0,.3)}
+.spin-pointer{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;border-right:10px solid transparent;
+  border-top:28px solid var(--red);filter:drop-shadow(0 2px 6px rgba(229,0,0,.6));
+}
+.spin-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--red),var(--red2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 4px 14px rgba(229,0,0,.5);cursor:pointer;
+  border:3px solid var(--bg0);
+}
+
+/* ══════════════════════════════════════════════
+   SEARCH PAGE
+══════════════════════════════════════════════ */
+.srch-bar-wrap{
+  display:flex;align-items:center;gap:9px;
+  padding:10px 12px;background:var(--bg1);
+  border-bottom:1px solid var(--border);
+}
+.srch-inp{
+  flex:1;padding:10px 14px;border-radius:22px;
+  background:var(--bg3);border:1.5px solid var(--border);color:#fff;
+  font-size:13px;font-family:'Poppins',sans-serif;outline:none;
+}
+.srch-inp:focus{border-color:rgba(229,0,0,.4)}
+.srch-back{
+  width:36px;height:36px;border-radius:10px;background:var(--bg3);
+  border:none;color:var(--t1);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:rgba(18,18,18,.97);color:#fff;
+  padding:9px 22px;border-radius:22px;
+  font-size:12px;font-weight:600;z-index:9990;
+  opacity:0;transition:.28s;white-space:nowrap;
+  border:1px solid rgba(255,255,255,.09);pointer-events:none;
+  max-width:90vw;text-align:center;
+}
+
+/* ══════════════════════════════════════════════
+   BAN MODAL
+══════════════════════════════════════════════ */
+#banModal{
+  position:fixed;inset:0;z-index:8000;
+  background:#000;display:none;align-items:center;justify-content:center;padding:24px;
+}
+#banModal.show{display:flex}
+.ban-box{background:var(--bg2);border:1px solid rgba(229,0,0,.3);border-radius:22px;padding:28px 20px;max-width:340px;width:100%;text-align:center}
+.ban-icon{font-size:48px;display:block;margin-bottom:12px}
+.ban-title{font-size:20px;font-weight:900;color:var(--red);margin-bottom:8px}
+.ban-msg{font-size:12px;color:var(--t2);line-height:1.7}
+
+/* ══════════════════════════════════════════════
+   UTILITY
+══════════════════════════════════════════════ */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.card-ttl{font-size:12px;font-weight:800;color:var(--red);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.info-box{background:rgba(255,193,7,.06);border:1px solid rgba(255,193,7,.2);border-radius:11px;padding:11px 14px;font-size:10px;color:#cca300;line-height:1.6;margin-bottom:10px}
+.info-box-red{background:rgba(229,0,0,.06);border:1px solid rgba(229,0,0,.2);border-radius:11px;padding:11px 14px;font-size:10px;color:#fca5a5;line-height:1.6;margin-bottom:10px}
+.badge-prem{font-size:8px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(255,193,7,.12);color:var(--gold);border:1px solid rgba(255,193,7,.25)}
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══════════════════════════════════════════════════ -->
+<div id="splash">
+  <div class="spl-logo">MOVIE<span>LOVER</span><sup>ORG</sup></div>
+  <div class="spl-spinner"></div>
+  <div class="spl-txt" id="splTxt">লোড হচ্ছে...</div>
+</div>
+
+<!-- ══ BAN MODAL ════════════════════════════════════════════════ -->
+<div id="banModal">
+  <div class="ban-box">
+    <span class="ban-icon">🚫</span>
+    <div class="ban-title">Account Banned</div>
+    <div class="ban-msg" id="banMsgTxt">আপনার অ্যাকাউন্ট সাসপেন্ড করা হয়েছে। আরো তথ্যের জন্য সাপোর্টে যোগাযোগ করুন।</div>
+  </div>
+</div>
+
+<!-- ══ APP SHELL ════════════════════════════════════════════════ -->
+<div id="app">
+  <!-- Notice Bar -->
+  <div id="noticeBar"><span class="nb-inner" id="nbInner"></span></div>
+
+  <!-- Top Bar -->
+  <div id="topbar">
+    <div class="tb-logo" onclick="showPage('home')">MOVIE<span>LOVER</span><sup>ORG</sup></div>
+    <div class="tb-right">
+      <div class="tb-icon" onclick="openSearch()" title="Search">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="tb-icon" onclick="openInbox()" title="Inbox">
+        <i class="fa fa-bell"></i>
+        <span class="tb-badge" id="inboxBadge">0</span>
+      </div>
+      <div class="tb-icon" onclick="openChatAdmin()" title="Chat">
+        <i class="fa fa-comment"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages -->
+  <div id="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="pg-home">
+      <div class="page-inner" id="pgHomeInner">
+        <!-- Hero -->
+        <div id="heroWrap"></div>
+        <!-- Category chips -->
+        <div class="cat-scroll" id="catScroll"></div>
+        <!-- Grid section -->
+        <div class="sec-hdr">
+          <span class="sec-ttl" id="gridTitle">সকল মুভি</span>
+          <span class="sec-more" id="gridMore" style="display:none" onclick="clearCatFilter()">সব দেখুন</span>
+        </div>
+        <div class="mov-grid" id="movGrid"></div>
+      </div>
+    </div>
+
+    <!-- TASK -->
+    <div class="page" id="pg-task">
+      <div class="page-inner">
+        <div id="taskNoticeBox"></div>
+        <div id="taskCards"></div>
+      </div>
+    </div>
+
+    <!-- EARN / LEADERBOARD -->
+    <div class="page" id="pg-earn">
+      <div class="page-inner">
+        <div class="earn-hero">
+          <div class="eh-pts" id="ehPts">0</div>
+          <div class="eh-pts-lbl">মোট পয়েন্ট</div>
+          <div class="eh-bal" id="ehBal">৳0.00</div>
+          <div class="eh-bal-lbl">আনুমানিক ব্যালেন্স</div>
+        </div>
+        <div class="earn-stat-row">
+          <div class="est"><div class="est-val" id="ehRef">0</div><div class="est-lbl">রেফারেল</div></div>
+          <div class="est"><div class="est-val" id="ehTasks">0</div><div class="est-lbl">টাস্ক</div></div>
+          <div class="est"><div class="est-val" id="ehRank">—</div><div class="est-lbl">র‌্যাংক</div></div>
+        </div>
+        <!-- Referral -->
+        <div class="card">
+          <div class="card-ttl"><i class="fa fa-link"></i> রেফারেল লিংক</div>
+          <div class="ref-link-row">
+            <span class="ref-link-txt" id="refLinkTxt">লগইন করুন...</span>
+            <button class="ref-copy" onclick="copyRef()"><i class="fa fa-copy"></i> কপি</button>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center">প্রতি রেফারের জন্য পয়েন্ট পাবেন!</div>
+        </div>
+        <!-- Leaderboard -->
+        <div class="card">
+          <div class="card-ttl"><i class="fa fa-trophy"></i> লিডারবোর্ড</div>
+          <div id="lbList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="page" id="pg-wallet">
+      <div class="page-inner">
+        <div class="wallet-hero">
+          <div class="wh-bal" id="whBal">৳0.00</div>
+          <div class="wh-bal-lbl">উইথড্র ব্যালেন্স</div>
+          <div class="wh-pts" id="whPts">0 পয়েন্ট</div>
+        </div>
+        <!-- Payment method -->
+        <div class="card">
+          <div class="card-ttl"><i class="fa fa-wallet"></i> পেমেন্ট পদ্ধতি</div>
+          <div class="wallet-meth-row" id="wMethRow"></div>
+        </div>
+        <!-- Withdraw form -->
+        <div class="card" id="wdFormCard">
+          <div class="card-ttl"><i class="fa fa-money-bill-wave"></i> উইথড্র করুন</div>
+          <label class="lbl">মোবাইল নাম্বার</label>
+          <input class="inp" id="wdNumInput" type="tel" placeholder="01XXXXXXXXX">
+          <label class="lbl">পরিমাণ (৳)</label>
+          <input class="inp" id="wdAmtInput" type="number" placeholder="সর্বনিম্ন ৳200">
+          <div class="info-box" id="wdInfoBox"></div>
+          <button class="btn-main" onclick="submitWithdraw()"><i class="fa fa-paper-plane"></i> রিকুয়েস্ট পাঠান</button>
+        </div>
+        <!-- History -->
+        <div class="card">
+          <div class="card-ttl"><i class="fa fa-history"></i> উইথড্র ইতিহাস</div>
+          <div id="wdHistory"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="pg-prof">
+      <div class="page-inner">
+        <div id="profContent"></div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- Bottom Nav -->
+  <div id="bnav">
+    <div class="bn active" id="bn-home" onclick="showPage('home')"><i class="fa fa-home"></i><span>হোম</span></div>
+    <div class="bn" id="bn-task" onclick="showPage('task')"><i class="fa fa-play-circle"></i><span>কাজ</span></div>
+    <div class="bn-center" onclick="showPage('earn')">
+      <div class="bn-center-btn"><i class="fa fa-chart-line"></i></div>
+      <div class="bn-center-lbl">আর্নিং</div>
+    </div>
+    <div class="bn" id="bn-wallet" onclick="showPage('wallet')"><i class="fa fa-wallet"></i><span>ওয়ালেট</span></div>
+    <div class="bn" id="bn-prof" onclick="showPage('prof')"><i class="fa fa-user-circle"></i><span>প্রোফাইল</span></div>
+  </div>
+</div><!-- /app -->
+
+<!-- ══ VIDEO PLAYER ═════════════════════════════════════════════ -->
+<div id="playerOverlay">
+  <div class="plyr-topbar">
+    <button class="plyr-back" onclick="closePlayer()"><i class="fa fa-arrow-left"></i></button>
+    <div class="plyr-title" id="plyrTitle">—</div>
+    <div class="tb-icon" onclick="toggleWLCurrent()" id="plyrWlBtn" style="background:transparent;border:none">
+      <i class="fa fa-bookmark" style="font-size:18px;color:var(--t3)" id="plyrWlIc"></i>
+    </div>
+  </div>
+  <iframe id="playerFrame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" frameborder="0"></iframe>
+  <!-- Related -->
+  <div style="overflow-y:auto;flex:0 0 auto;max-height:35vh;background:var(--bg1);border-top:1px solid var(--border)">
+    <div style="padding:10px 12px;font-size:11px;font-weight:700;color:var(--t3)">সম্পর্কিত মুভি</div>
+    <div class="mov-grid" id="relatedGrid" style="padding:0 12px 12px;grid-template-columns:repeat(3,1fr)"></div>
+  </div>
+</div>
+
+<!-- ══ AD OVERLAY ═══════════════════════════════════════════════ -->
+<div id="adOverlay">
+  <div class="ao-timer">
+    <div class="ao-timer-txt" id="aoTimerTxt">15</div>
+  </div>
+  <div class="ao-txt">বিজ্ঞাপন দেখুন এবং পয়েন্ট উপার্জন করুন।<br>অনুগ্রহ করে অপেক্ষা করুন...</div>
+  <button class="ao-close" id="aoCloseBtn" onclick="closeAdOverlay()">
+    <i class="fa fa-check"></i> ক্লোজ করুন
+  </button>
+</div>
+
+<!-- ══ INBOX MODAL ══════════════════════════════════════════════ -->
+<div class="inbox-modal" id="inboxModal">
+  <div class="inbox-hdr">
+    <button class="inbox-back" onclick="closeInbox()"><i class="fa fa-arrow-left"></i></button>
+    <div style="font-size:14px;font-weight:800">📬 ইনবক্স</div>
+  </div>
+  <div class="inbox-body" id="inboxBody"></div>
+</div>
+
+<!-- ══ AUTH MODAL ═══════════════════════════════════════════════ -->
+<div id="authModal">
+  <div class="auth-box">
+    <div class="auth-ttl">স্বাগতম! 👋</div>
+    <div class="auth-sub">Movie Lover-এ অ্যাকাউন্ট তৈরি বা লগইন করুন</div>
+    <label class="lbl">আপনার নাম</label>
+    <input class="inp" id="authName" placeholder="আপনার নাম লিখুন">
+    <label class="lbl">মোবাইল নাম্বার</label>
+    <div class="country-row">
+      <select class="inp country-sel" id="authCountry" style="margin-bottom:0">
+        <option value="+880">🇧🇩 +880</option>
+        <option value="+91">🇮🇳 +91</option>
+        <option value="+1">🇺🇸 +1</option>
+        <option value="+44">🇬🇧 +44</option>
+      </select>
+      <input class="inp" id="authPhone" type="tel" placeholder="01XXXXXXXXX" style="margin-bottom:0;flex:1">
+    </div>
+    <div style="margin-top:10px"></div>
+    <button class="btn-main" onclick="submitAuth()" style="margin-top:4px"><i class="fa fa-sign-in-alt"></i> লগইন / রেজিস্ট্রেশন</button>
+    <div class="auth-or">অথবা</div>
+    <button class="btn-main" onclick="guestLogin()" style="background:var(--bg4);color:var(--t2);border:1px solid var(--border)"><i class="fa fa-user"></i> গেস্ট হিসেবে চালিয়ে যান</button>
+  </div>
+</div>
+
+<!-- ══ POPUP NOTIFICATION ════════════════════════════════════════ -->
+<div id="popupNotif">
+  <div class="pn-box">
+    <span class="pn-icon" id="pnIcon">📢</span>
+    <div class="pn-title" id="pnTitle"></div>
+    <div class="pn-body" id="pnBody"></div>
+    <a class="pn-btn" id="pnBtn" href="#" target="_blank"></a>
+    <div class="pn-close" onclick="closePopup()">এখন নয়</div>
+  </div>
+</div>
+
+<!-- ══ PREMIUM MODAL ════════════════════════════════════════════ -->
+<div id="premModal">
+  <div class="prem-box">
+    <div class="prem-hdr">
+      <div style="font-size:15px;font-weight:900">👑 প্রিমিয়াম সদস্যতা</div>
+      <button class="prem-close" onclick="closePremModal()"><i class="fa fa-times"></i></button>
+    </div>
+    <div id="pkgsList"></div>
+    <div id="pkgPayForm" style="display:none">
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:10px" id="pmNoteBox"></div>
+      <label class="lbl">Transaction ID</label>
+      <input class="inp" id="txnInp" placeholder="পেমেন্ট করার পরে Transaction ID দিন">
+      <button class="btn-main" onclick="submitPrem()"><i class="fa fa-crown"></i> সাবমিট করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN CHAT ════════════════════════════════════════════════ -->
+<div id="chatPage">
+  <div class="chat-hdr">
+    <button class="chat-back" onclick="closeChatAdmin()"><i class="fa fa-arrow-left"></i></button>
+    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8b0000,var(--red));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">👑</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:800">Admin Support</div><div style="font-size:9px;color:var(--t3)">সাধারণত কয়েক ঘন্টার মধ্যে উত্তর দেন</div></div>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-inp-row">
+    <div class="chat-inp" id="chatInp" contenteditable="true" placeholder="মেসেজ লিখুন..." onkeydown="handleChatKey(event)"></div>
+    <button class="chat-send" onclick="sendChatMsg()"><i class="fa fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- ══ SEARCH PAGE ═══════════════════════════════════════════════ -->
+<div class="inbox-modal" id="searchPage">
+  <div class="srch-bar-wrap">
+    <button class="srch-back" onclick="closeSearch()"><i class="fa fa-arrow-left"></i></button>
+    <input class="srch-inp" id="srchInp" placeholder="মুভি খুঁজুন..." oninput="doSearch(this.value)" autofocus>
+    <button class="tb-icon" onclick="startVoiceSearch()" style="flex-shrink:0"><i class="fa fa-microphone"></i></button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:12px">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px" id="srchInfo"></div>
+    <div class="mov-grid" id="srchGrid"></div>
+  </div>
+</div>
+
+<!-- ══ TOAST ════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FIREBASE INIT + CORE APP
+══════════════════════════════════════════════════════════════ -->
+<script>
+// ── Firebase Init ────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyBPEvyz0GVGUGvF2K0H3e2Dx4Qw_WCYjFU",
+  authDomain:"movi-lover-video.firebaseapp.com",
+  projectId:"movi-lover-video",
+  databaseURL:"https://movi-lover-video-default-rtdb.firebaseio.com",
+  storageBucket:"movi-lover-video.appspot.com",
+  appId:"1:1063457095926:web:4695d26c35e8b603326cd7"
+});
+const db   = firebase.database();
+const auth = firebase.auth();
+
+// ── State ────────────────────────────────────────────────────
+let cfg = {};           // site config (notice, rates, etc.)
+let vids = [];          // movies array
+let cats = [];          // categories
+let catIcons = {};
+let catBanners = {};
+let pkgs = {};          // premium packages
+let spinPrizes = [];
+let payLogos = {};
+
+let curUser = null;     // firebase auth user
+let uData = {};         // user doc from DB
+let uPts = 0;
+let uBanned = false;
+let uPremium = false;
+let uRefs = 0;
+let uTasksDone = {};    // {key: count}
+let uHistory = JSON.parse(localStorage.getItem('hist') || '[]');
+let wl = JSON.parse(localStorage.getItem('wl') || '[]');
+
+let currentCat = 'all';
+let currentPlayer = null;  // current movie key in player
+let heroIdx = 0;
+let heroTmr = null;
+let selWdMeth = 'bkash';
+let selPkgKey = null;
+let chatListener = null;
+let adState = {};
+let adResolve = null;
+let _toastTimer;
+
+// ── Referral from URL ────────────────────────────────────────
+const urlParams = new URLSearchParams(location.search);
+const refBy = urlParams.get('ref') || '';
+if (refBy) localStorage.setItem('refBy', refBy);
+const storedRefBy = localStorage.getItem('refBy') || '';
+
+// ── Splash utilities ─────────────────────────────────────────
+function setSplTxt(t){ document.getElementById('splTxt').textContent = t; }
+
+function hideSplash(){
+  const s = document.getElementById('splash');
+  s.classList.add('hide');
+  setTimeout(()=>{ s.style.display='none'; }, 450);
+  document.getElementById('app').classList.add('ready');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  BOOT: load config + movies in parallel (targeted, fast reads)
+// ─────────────────────────────────────────────────────────────
+async function boot(){
+  setSplTxt('কনফিগ লোড হচ্ছে...');
+
+  try {
+    // 1. Load config (small node)
+    const cfgSnap = await Promise.race([
+      db.ref('siteConfig').get(),
+      timeout(8000)
+    ]);
+
+    // Fallback: if siteConfig doesn't exist, read individual keys
+    if (cfgSnap && cfgSnap.exists()) {
+      cfg = cfgSnap.val() || {};
+    } else {
+      // Read flat config keys — faster than reading entire DB
+      const [
+        noticeSnap, rateSnap, minWdSnap, reqRefsSnap,
+        dailyBonusSnap, noticeTitleSnap, noticeMsgSnap,
+        noticeIconSnap, noticeVisSnap, taskTimerSnap,
+        dailySpinsSnap, spinWaitSnap, botTokenSnap,
+        bkashNumSnap, nagadNumSnap, rocketNumSnap, pmNoteSnap,
+        fbSnap, ytSnap, igSnap, tgSnap,
+        popupSnap, gen1Snap, gen2Snap, gen3Snap,
+        spinEnabledSnap, payLogosSnap
+      ] = await Promise.all([
+        db.ref('notice').get(),
+        db.ref('pointRate').get(),
+        db.ref('minWithdraw').get(),
+        db.ref('requireReferrals').get(),
+        db.ref('dailyBonus').get(),
+        db.ref('taskNotice/title').get(),
+        db.ref('taskNotice/msg').get(),
+        db.ref('taskNotice/icon').get(),
+        db.ref('noticeBarVisible').get(),
+        db.ref('taskTimer').get(),
+        db.ref('dailySpins').get(),
+        db.ref('spinWaitTime').get(),
+        db.ref('botToken').get(),
+        db.ref('bkashNum').get(),
+        db.ref('nagadNum').get(),
+        db.ref('rocketNum').get(),
+        db.ref('pmNote').get(),
+        db.ref('facebookLink').get(),
+        db.ref('youtubeLink').get(),
+        db.ref('instagramLink').get(),
+        db.ref('telegramLink').get(),
+        db.ref('popupNotif').get(),
+        db.ref('gen1Rate').get(),
+        db.ref('gen2Rate').get(),
+        db.ref('gen3Rate').get(),
+        db.ref('spinEnabled').get(),
+        db.ref('paymentLogos').get(),
+      ]);
+      cfg = {
+        notice: noticeSnap.val(),
+        pointRate: rateSnap.val() || 0.1,
+        minWithdraw: minWdSnap.val() || 200,
+        requireReferrals: reqRefsSnap.val() || 0,
+        dailyBonus: dailyBonusSnap.val() || 25,
+        taskNotice: { title: noticeTitleSnap.val(), msg: noticeMsgSnap.val(), icon: noticeIconSnap.val() },
+        noticeBarVisible: noticeVisSnap.val() !== false,
+        taskTimer: taskTimerSnap.val() || 15,
+        dailySpins: dailySpinsSnap.val() || 3,
+        spinWaitTime: spinWaitSnap.val() || 15,
+        botToken: botTokenSnap.val(),
+        bkashNum: bkashNumSnap.val(),
+        nagadNum: nagadNumSnap.val(),
+        rocketNum: rocketNumSnap.val(),
+        pmNote: pmNoteSnap.val(),
+        facebookLink: fbSnap.val(),
+        youtubeLink: ytSnap.val(),
+        instagramLink: igSnap.val(),
+        telegramLink: tgSnap.val(),
+        popupNotif: popupSnap.val(),
+        gen1Rate: gen1Snap.val() || 10,
+        gen2Rate: gen2Snap.val() || 5,
+        gen3Rate: gen3Snap.val() || 2,
+        spinEnabled: spinEnabledSnap.val() !== false,
+        paymentLogos: payLogosSnap.val() || {},
+      };
+    }
+    payLogos = cfg.paymentLogos || {};
+
+    setSplTxt('মুভি লোড হচ্ছে...');
+
+    // 2. Load movies + categories + packages + spinPrizes in parallel
+    const [movSnap, catSnap, pkgSnap, spinSnap, orderSnap, bannerTaskSnap] = await Promise.all([
+      db.ref('movies').get(),
+      db.ref('categories').get(),
+      db.ref('packages').get(),
+      db.ref('spinPrizes').get(),
+      db.ref('movieOrder').get(),
+      db.ref('bannerTasks').get(),
+    ]);
+
+    const movObj = movSnap.val() || {};
+    vids = Object.keys(movObj).map(k => ({ ...movObj[k], key: k }));
+    const order = orderSnap.val();
+    if (order) vids.sort((a,b) => order.indexOf(a.key) - order.indexOf(b.key));
+    else vids.reverse();
+
+    cats = catSnap.val() || [];
+    pkgs = pkgSnap.val() || {};
+    spinPrizes = spinSnap.val() || getDefaultPrizes();
+    cfg.bannerTasks = bannerTaskSnap.val() || {};
+
+    setSplTxt('অ্যাকাউন্ট চেক হচ্ছে...');
+
+    // 3. Auth
+    await initAuth();
+
+  } catch(err) {
+    console.error('Boot error:', err);
+    setSplTxt('❌ লোড ব্যর্থ। রিফ্রেশ করুন।');
+    setTimeout(()=>location.reload(), 3000);
+    return;
+  }
+}
+
+function timeout(ms){ return new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), ms)); }
+
+// ─────────────────────────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────────────────────────
+function initAuth(){
+  return new Promise(resolve => {
+    // Check if guest/phone user saved
+    const savedUid = localStorage.getItem('ml_uid');
+    if (savedUid) {
+      auth.signInAnonymously().then(r => {
+        curUser = { uid: savedUid };
+        loadUserData(savedUid).then(() => {
+          finishBoot();
+          resolve();
+        });
+      }).catch(()=>{
+        finishBoot();
+        resolve();
+      });
+      return;
+    }
+
+    auth.onAuthStateChanged(user => {
+      curUser = user;
+      if (user) {
+        localStorage.setItem('ml_uid', user.uid);
+        loadUserData(user.uid).then(() => {
+          finishBoot();
+          resolve();
+        });
+      } else {
+        finishBoot();
+        resolve();
+      }
+    });
+  });
+}
+
+async function loadUserData(uid){
+  const snap = await db.ref('users/'+uid).get();
+  uData = snap.val() || {};
+  uPts = uData.points || 0;
+  uBanned = uData.banned === true;
+  uPremium = uData.premiumStatus === 'active';
+  uRefs = uData.referralCount || 0;
+  uTasksDone = uData.tasksDone || {};
+
+  if (uBanned) {
+    document.getElementById('banMsgTxt').textContent = uData.banReason || 'আপনার অ্যাকাউন্ট সাসপেন্ড করা হয়েছে।';
+    document.getElementById('banModal').classList.add('show');
+    return;
+  }
+
+  // Real-time points listener
+  db.ref('users/'+uid+'/points').on('value', snap => {
+    const np = snap.val() || 0;
+    uPts = np;
+    refreshPtsDisplay();
+  });
+
+  // Real-time inbox unread badge
+  db.ref('userInbox/'+uid).on('value', snap => {
+    const msgs = snap.val() || {};
+    const unread = Object.values(msgs).filter(m => !m.read).length;
+    const badge = document.getElementById('inboxBadge');
+    badge.textContent = unread;
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  FINISH BOOT — render UI, then load Code Manager features
+// ─────────────────────────────────────────────────────────────
+function finishBoot(){
+  applyConfig();
+  renderHome();
+  renderNavActive('home');
+  hideSplash();
+
+  // Show popup (deferred so UI is visible)
+  setTimeout(checkPopup, 1200);
+
+  // ★ KEY FIX: Load Code Manager features from Firebase and inject
+  // Uses .on() so Admin Panel changes reflect INSTANTLY, no refresh needed
+  loadCodeFeatures();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ★★★ CODE MANAGER FEATURE LOADER
+//  Listens to Firebase codeFeatures/ in real-time.
+//  Any Admin Panel save triggers this and re-injects the code.
+// ─────────────────────────────────────────────────────────────
+function loadCodeFeatures(){
+  db.ref('codeFeatures').on('value', snap => {
+    const features = snap.val() || {};
+    Object.entries(features).forEach(([key, feat]) => {
+      if (!feat || !feat.code) return;
+      injectFeature(key, feat);
+    });
+  });
+}
+
+/**
+ * Injects a feature's code into the page.
+ * JS → eval'd inside a try/catch
+ * HTML → injected into a dedicated container
+ * CSS → injected/replaced in a <style> tag
+ * full → split on "/* JS */" marker and handle both
+ */
+function injectFeature(key, feat){
+  const type = feat.type || 'js';
+  const code = feat.code || '';
+  const containerId = 'cm-inject-' + key;
+
+  try {
+    if (type === 'js') {
+      // Re-evaluate JS (defines/redefines functions globally)
+      // eslint-disable-next-line no-eval
+      const fn = new Function(code);
+      fn();
+    } else if (type === 'html') {
+      let el = document.getElementById(containerId);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = containerId;
+        // Append to body so it's always available
+        document.body.appendChild(el);
+      }
+      el.innerHTML = code;
+    } else if (type === 'css') {
+      let styleEl = document.getElementById('cm-style-' + key);
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'cm-style-' + key;
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = code;
+    } else if (type === 'full') {
+      // Attempt to split HTML / CSS / JS blocks
+      // Convention: comments /* CSS */, /* JS */, <!-- HTML --> or just try eval
+      const cssMatch = code.match(/\/\* CSS \*\/([\s\S]*?)(?=\/\* JS \*\/|$)/i);
+      const jsMatch  = code.match(/\/\* JS \*\/([\s\S]*?)$/i);
+      const htmlMatch= code.match(/<!--([\s\S]*?)-->/);
+
+      if (cssMatch) {
+        let styleEl = document.getElementById('cm-style-' + key);
+        if (!styleEl) { styleEl = document.createElement('style'); styleEl.id='cm-style-'+key; document.head.appendChild(styleEl); }
+        styleEl.textContent = cssMatch[1];
+      }
+      if (htmlMatch) {
+        let el = document.getElementById(containerId);
+        if (!el) { el = document.createElement('div'); el.id=containerId; document.body.appendChild(el); }
+        el.innerHTML = htmlMatch[1];
+      }
+      if (jsMatch) {
+        try { const fn = new Function(jsMatch[1]); fn(); } catch(e){ console.warn('CM feature JS error ['+key+']:', e); }
+      } else {
+        // Try evaluating the whole thing as JS
+        try { const fn = new Function(code); fn(); } catch(e){ /* not pure JS, ignore */ }
+      }
+    }
+  } catch(e){
+    console.warn('[CodeManager] Feature "'+key+'" inject error:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  APPLY CONFIG
+// ─────────────────────────────────────────────────────────────
+function applyConfig(){
+  // Notice bar
+  const nb = document.getElementById('noticeBar');
+  if (cfg.notice && cfg.noticeBarVisible !== false) {
+    document.getElementById('nbInner').textContent = '📢  ' + cfg.notice + '   •   ';
+    nb.style.display = 'block';
+  } else {
+    nb.style.display = 'none';
+  }
+
+  // Wallet info box
+  const wdInfo = document.getElementById('wdInfoBox');
+  if (wdInfo) {
+    wdInfo.textContent = `সর্বনিম্ন উইথড্র: ৳${cfg.minWithdraw||200} • ${cfg.requireReferrals||0} রেফার প্রয়োজন • রেট: ${cfg.pointRate||0.1} ৳/পয়েন্ট`;
+  }
+
+  // Payment methods
+  renderWalletMethods();
+  renderTaskPage();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HOME
+// ─────────────────────────────────────────────────────────────
+function renderHome(){
+  renderHero();
+  renderCatChips();
+  renderMovGrid(currentCat);
+}
+
+function renderHero(){
+  const wrap = document.getElementById('heroWrap');
+  const top = vids.filter(v => v.featured || v.trending).slice(0,6);
+  if (!top.length && vids.length){ top.push(...vids.slice(0,5)); }
+  if (!top.length){ wrap.style.display='none'; return; }
+  wrap.style.display = 'block';
+  wrap.innerHTML = top.map((v,i)=>`
+    <div class="hero-slide ${i===0?'active':''}" data-hi="${i}">
+      <img src="${v.thumb||''}" alt="${esc(v.title||'')}" loading="${i===0?'eager':'lazy'}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 9%22><rect fill=%22%23161616%22 width=%2216%22 height=%229%22/></svg>'">
+      <div class="hero-ov"></div>
+      <div class="hero-info">
+        <div class="hero-cat">${esc(v.category||'')}</div>
+        <div class="hero-title">${esc(v.title||'')}</div>
+      </div>
+      <div class="hero-play" onclick="playVid('${v.key}')"><i class="fa fa-play"></i></div>
+    </div>
+  `).join('') + `<div class="hero-dots">${top.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="goHero(${i})"></div>`).join('')}</div>`;
+  clearInterval(heroTmr);
+  heroTmr = setInterval(()=>{ goHero((heroIdx+1) % top.length); }, 4500);
+}
+
+function goHero(idx){
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots   = document.querySelectorAll('.hero-dot');
+  if (!slides.length) return;
+  slides.forEach((s,i)=>{ s.classList.toggle('active', i===idx); });
+  dots.forEach((d,i)=>{ d.classList.toggle('active', i===idx); });
+  heroIdx = idx;
+}
+
+function renderCatChips(){
+  const el = document.getElementById('catScroll');
+  el.innerHTML = `<div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">🎬 সব</div>` +
+    cats.map(c => {
+      const icon = catIcons[c] ? `<img src="${catIcons[c]}" class="cat-chip-icon" onerror="this.remove()">` : '';
+      return `<div class="cat-chip" data-cat="${esc(c)}" onclick="filterCat('${esc(c)}',this)">${icon}${esc(c)}</div>`;
+    }).join('');
+}
+
+function filterCat(cat, el){
+  currentCat = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('gridTitle').textContent = cat==='all' ? 'সকল মুভি' : cat;
+  document.getElementById('gridMore').style.display = cat==='all' ? 'none' : 'block';
+  renderMovGrid(cat);
+}
+
+function clearCatFilter(){
+  currentCat = 'all';
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat==='all'));
+  document.getElementById('gridTitle').textContent = 'সকল মুভি';
+  document.getElementById('gridMore').style.display = 'none';
+  renderMovGrid('all');
+}
+
+function renderMovGrid(cat='all'){
+  const grid = document.getElementById('movGrid');
+  let list = vids;
+  if (cat !== 'all') list = vids.filter(v => v.category === cat);
+  if (!list.length){
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="fa fa-film"></i><p>কোনো মুভি নেই</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(v => movieCard(v)).join('');
+}
+
+function movieCard(v){
+  const inWL = wl.includes(v.key);
+  const isPrem = v.premium && !uPremium;
+  return `<div class="mov-card" onclick="playVid('${v.key}')">
+    <div class="mov-thumb-wrap">
+      <img class="mov-thumb" src="${v.thumb||''}" alt="${esc(v.title||'')}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 9%22><rect fill=%22%23161616%22 width=%2216%22 height=%229%22/></svg>'">
+      <div class="mov-play-ic"><i class="fa fa-play"></i></div>
+      <div class="wl-btn ${inWL?'saved':''}" onclick="toggleWL('${v.key}',event)">
+        <i class="fa fa-bookmark"></i>
+      </div>
+    </div>
+    <div class="mov-info">
+      <div class="mov-title">${esc(v.title||'')}</div>
+      <div class="mov-meta">
+        <span class="mov-cat">${esc(v.category||'')}</span>
+        ${isPrem?'<span class="mov-prem-badge">👑 PREMIUM</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  WATCH LATER
+// ─────────────────────────────────────────────────────────────
+function toggleWL(key, e){
+  if (e) e.stopPropagation();
+  const was = wl.includes(key);
+  wl = was ? wl.filter(k=>k!==key) : [...wl, key];
+  localStorage.setItem('wl', JSON.stringify(wl));
+  renderMovGrid(currentCat);
+  toast(was ? 'Watch Later থেকে সরানো' : '✅ Watch Later-এ যোগ!');
+}
+
+function toggleWLCurrent(){
+  if (!currentPlayer) return;
+  toggleWL(currentPlayer, null);
+  const was = wl.includes(currentPlayer);
+  document.getElementById('plyrWlIc').style.color = was ? 'var(--gold)' : 'var(--t3)';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PLAYER
+// ─────────────────────────────────────────────────────────────
+function playVid(key){
+  const v = vids.find(x=>x.key===key);
+  if (!v) return;
+
+  // Premium gate
+  if (v.premium && !uPremium){
+    toast('👑 এই মুভি প্রিমিয়াম সদস্যদের জন্য');
+    setTimeout(openPremModal, 600);
+    return;
+  }
+
+  // Record history
+  uHistory = [key, ...uHistory.filter(k=>k!==key)].slice(0,50);
+  localStorage.setItem('hist', JSON.stringify(uHistory));
+
+  // Increment views (fire-and-forget)
+  db.ref('movies/'+key+'/views').transaction(n=>(n||0)+1);
+
+  currentPlayer = key;
+  document.getElementById('plyrTitle').textContent = v.title || '';
+  document.getElementById('plyrWlIc').style.color = wl.includes(key) ? 'var(--gold)' : 'var(--t3)';
+  document.getElementById('playerFrame').src = v.embedUrl || v.url || '';
+  document.getElementById('playerOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  // Related videos
+  const rel = vids.filter(x=>x.key!==key && x.category===v.category).slice(0,6);
+  document.getElementById('relatedGrid').innerHTML = rel.map(r=>movieCard(r)).join('') || '<div style="padding:10px;color:var(--t3);font-size:11px">সম্পর্কিত মুভি নেই</div>';
+}
+
+function closePlayer(){
+  document.getElementById('playerOverlay').classList.remove('show');
+  document.getElementById('playerFrame').src = '';
+  document.body.style.overflow = '';
+  currentPlayer = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  AD OVERLAY
+// ─────────────────────────────────────────────────────────────
+function showAdOverlay(reward, timerSec){
+  return new Promise(resolve => {
+    adResolve = resolve;
+    const totalSec = timerSec || cfg.taskTimer || 15;
+    let remaining = totalSec;
+    document.getElementById('aoTimerTxt').textContent = remaining;
+    const closeBtn = document.getElementById('aoCloseBtn');
+    closeBtn.classList.remove('active');
+    document.getElementById('adOverlay').classList.add('show');
+
+    const iv = setInterval(()=>{
+      remaining--;
+      document.getElementById('aoTimerTxt').textContent = remaining;
+      if (remaining <= 0){
+        clearInterval(iv);
+        closeBtn.classList.add('active');
+        closeBtn.textContent = '✅ ক্লোজ করুন (+' + reward + ' পয়েন্ট)';
+      }
+    }, 1000);
+
+    adState = { iv, reward };
+  });
+}
+
+function closeAdOverlay(){
+  clearInterval(adState.iv);
+  document.getElementById('adOverlay').classList.remove('show');
+  if (adResolve) { adResolve(adState.reward || 0); adResolve = null; }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TASK PAGE
+// ─────────────────────────────────────────────────────────────
+function renderTaskPage(){
+  const bt = cfg.bannerTasks || {};
+  const noticeBox = document.getElementById('taskNoticeBox');
+  const tn = cfg.taskNotice || {};
+  if (tn.title || tn.msg){
+    noticeBox.innerHTML = `<div class="task-notice"><span class="tn-icon">${tn.icon||'📋'}</span><div class="tn-title">${esc(tn.title||'')}</div><div class="tn-msg">${esc(tn.msg||'')}</div></div>`;
+  } else noticeBox.innerHTML = '';
+
+  const cards = document.getElementById('taskCards');
+  const nets = ['monetag','gigapub'];
+  const html = nets.map(netKey => {
+    const n = bt[netKey];
+    if (!n || n.enabled === false) return '';
+    const todayKey = 'td_'+netKey+'_'+getTodayKey();
+    const used = parseInt(localStorage.getItem(todayKey)||'0', 10);
+    const limit = n.dailyLimit || 15;
+    const done = used >= limit;
+    const logoHtml = n.logo ? `<img src="${n.logo}" alt="${netKey}">` : netKey[0].toUpperCase();
+    return `<div class="task-card">
+      <div class="tc-header">
+        <div class="tc-logo">${logoHtml}</div>
+        <div><div class="tc-name">${esc(n.name||netKey)}</div><div class="tc-desc">${esc(n.desc||'')}</div></div>
+      </div>
+      <div class="tc-body">
+        <div class="tc-reward">
+          <span class="tc-pts">+${n.reward||20}</span>
+          <span class="tc-pts-lbl">পয়েন্ট/বার</span>
+          <span class="tc-limit">${used}/${limit} আজ</span>
+        </div>
+        <div class="tc-progress">
+          <div class="tcp-bar"><div class="tcp-fill" style="width:${Math.min(100,(used/limit)*100)}%"></div></div>
+        </div>
+        ${done
+          ? `<div class="tc-done">✅ আজকের লিমিট শেষ</div>`
+          : `<button class="tc-btn" onclick="doTask('${netKey}')"><i class="fa fa-play"></i> টাস্ক শুরু করুন</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+  cards.innerHTML = html || '<div class="empty-state"><i class="fa fa-tasks"></i><p>কোনো টাস্ক পাওয়া যায়নি</p></div>';
+}
+
+async function doTask(netKey){
+  const n = (cfg.bannerTasks||{})[netKey];
+  if (!n) return;
+  if (!curUser){ openAuthModal(); return; }
+  if (uBanned){ return; }
+
+  const todayKey = 'td_'+netKey+'_'+getTodayKey();
+  const used = parseInt(localStorage.getItem(todayKey)||'0', 10);
+  if (used >= (n.dailyLimit||15)){ toast('আজকের লিমিট শেষ!'); return; }
+
+  // Open ad link
+  if (n.link) window.open(n.link, '_blank');
+
+  // Show timer overlay
+  const earned = await showAdOverlay(n.reward||20, n.timer||15);
+
+  // Credit points
+  if (earned > 0 && curUser){
+    await db.ref('users/'+curUser.uid+'/points').transaction(p=>(p||0)+earned);
+    localStorage.setItem(todayKey, used+1);
+    toast('✅ +'+earned+' পয়েন্ট!');
+    renderTaskPage();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  EARN PAGE
+// ─────────────────────────────────────────────────────────────
+function renderEarnPage(){
+  const rate = cfg.pointRate || 0.1;
+  document.getElementById('ehPts').textContent = uPts;
+  document.getElementById('ehBal').textContent = '৳' + (uPts * rate).toFixed(2);
+  document.getElementById('ehRef').textContent = uRefs;
+  const uid = curUser?.uid;
+  if (uid){
+    document.getElementById('refLinkTxt').textContent = location.origin + location.pathname + '?ref=' + uid;
+  } else {
+    document.getElementById('refLinkTxt').textContent = 'লগইন করুন';
+  }
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  db.ref('users').orderByChild('points').limitToLast(20).once('value', snap=>{
+    const data = snap.val() || {};
+    const arr = Object.entries(data).map(([k,v])=>({uid:k,...v})).sort((a,b)=>(b.points||0)-(a.points||0));
+    const medals = ['🥇','🥈','🥉'];
+    const myRank = arr.findIndex(u=>u.uid===curUser?.uid);
+    if (myRank>=0) document.getElementById('ehRank').textContent = myRank+1;
+
+    document.getElementById('lbList').innerHTML = arr.slice(0,10).map((u,i)=>`
+      <div class="lb-row" style="${u.uid===curUser?.uid?'background:rgba(229,0,0,.08);border:1px solid rgba(229,0,0,.2);border-radius:10px':''}">
+        <div class="lb-rank" style="color:${i===0?'var(--gold)':i===1?'#94a3b8':i===2?'#b45309':'var(--t3)'}">${medals[i]||i+1}</div>
+        <div class="lb-av">${u.photoURL?`<img src="${u.photoURL}" onerror="this.remove()">`:'👤'}</div>
+        <div class="lb-name">${esc(u.name||u.uid?.slice(0,12)||'User')}</div>
+        <div class="lb-pts">${u.points||0} pts</div>
+      </div>
+    `).join('') || '<div class="empty-state"><p>কোনো ডেটা নেই</p></div>';
+  });
+}
+
+function copyRef(){
+  const uid = curUser?.uid;
+  if (!uid){ openAuthModal(); return; }
+  const link = location.origin + location.pathname + '?ref=' + uid;
+  navigator.clipboard?.writeText(link)
+    .then(()=>toast('✅ লিংক কপি হয়েছে!'))
+    .catch(()=>{
+      const ta = document.createElement('textarea');
+      ta.value = link; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      toast('✅ কপি!');
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  WALLET
+// ─────────────────────────────────────────────────────────────
+function renderWalletMethods(){
+  const meths = [
+    { key:'bkash',  name:'বিকাশ',  num: cfg.bkashNum },
+    { key:'nagad',  name:'নগদ',    num: cfg.nagadNum },
+    { key:'rocket', name:'রকেট',   num: cfg.rocketNum },
+    { key:'bank',   name:'ব্যাংক', num: null },
+  ];
+  document.getElementById('wMethRow').innerHTML = meths.map(m => {
+    const logo = payLogos[m.key];
+    return `<div class="wm-card ${selWdMeth===m.key?'active':''}" onclick="selMeth('${m.key}')">
+      ${logo ? `<img src="${logo}" alt="${m.name}" onerror="this.remove()">` : `<div style="font-size:22px;margin-bottom:4px">${m.name[0]}</div>`}
+      <div class="wm-name">${m.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function selMeth(m){
+  selWdMeth = m;
+  renderWalletMethods();
+}
+
+function renderWalletPage(){
+  const rate = cfg.pointRate || 0.1;
+  document.getElementById('whBal').textContent = '৳' + (uPts * rate).toFixed(2);
+  document.getElementById('whPts').textContent = uPts + ' পয়েন্ট';
+
+  if (!curUser){ document.getElementById('wdFormCard').innerHTML = `<div class="empty-state"><i class="fa fa-lock"></i><p>উইথড্র করতে লগইন করুন</p></div><button class="btn-main" onclick="openAuthModal()" style="margin-top:12px"><i class="fa fa-sign-in-alt"></i> লগইন করুন</button>`; return; }
+
+  // Withdrawal history
+  db.ref('withdrawals').orderByChild('userId').equalTo(curUser.uid).once('value', snap=>{
+    const arr = Object.values(snap.val()||{}).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    document.getElementById('wdHistory').innerHTML = arr.length
+      ? arr.map(r=>`<div class="wd-history-item">
+          <div class="whi-left"><div class="whi-method">${(r.method||'').toUpperCase()}</div><div class="whi-num">${r.number||''}</div><div class="whi-ts">${new Date(r.ts||0).toLocaleDateString('bn-BD')}</div></div>
+          <div class="whi-right"><div class="whi-taka">৳${r.taka||0}</div><div class="whi-status ${r.status==='paid'?'s-paid':r.status==='rejected'?'s-rej':'s-pend'}">${r.status==='paid'?'✅ পেইড':r.status==='rejected'?'❌ প্রত্যাখ্যাত':'⏳ অপেক্ষমাণ'}</div></div>
+        </div>`).join('')
+      : '<div class="empty-state"><i class="fa fa-history"></i><p>কোনো ইতিহাস নেই</p></div>';
+  });
+}
+
+async function submitWithdraw(){
+  if (!curUser){ openAuthModal(); return; }
+  if (uBanned) return;
+  const rate = cfg.pointRate || 0.1;
+  const minWD = cfg.minWithdraw || 200;
+  const reqR  = cfg.requireReferrals || 0;
+  const amt   = parseFloat(document.getElementById('wdAmtInput').value || '0');
+  const num   = (document.getElementById('wdNumInput').value || '').replace(/\D/g,'');
+
+  if (!amt || amt < minWD){ toast('সর্বনিম্ন ৳'+minWD+' দিন।'); return; }
+  if (!num || num.length < 10){ toast('সঠিক মোবাইল নাম্বার দিন!'); return; }
+  if (uRefs < reqR){ toast('আরও '+(reqR-uRefs)+'টি রেফার করুন!'); return; }
+  const pts = Math.ceil(amt / rate);
+  if (uPts < pts){ toast('পর্যাপ্ত পয়েন্ট নেই! প্রয়োজন: '+pts+' পয়েন্ট'); return; }
+
+  await db.ref('users/'+curUser.uid+'/points').transaction(p=>(p||0)-pts);
+  await db.ref('withdrawals').push({userId:curUser.uid,method:selWdMeth,number:num,taka:amt,points:pts,status:'pending',ts:Date.now()});
+  toast('✅ রিকুয়েস্ট পাঠানো হয়েছে!');
+  document.getElementById('wdAmtInput').value='';
+  document.getElementById('wdNumInput').value='';
+  renderWalletPage();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PROFILE
+// ─────────────────────────────────────────────────────────────
+function renderProfPage(){
+  const el = document.getElementById('profContent');
+  if (!curUser){
+    el.innerHTML = `<div class="empty-state" style="padding:60px 20px"><i class="fa fa-user-circle" style="font-size:48px"></i><p style="font-size:13px;margin-top:10px">লগইন করুন</p></div>
+      <button class="btn-main" onclick="openAuthModal()"><i class="fa fa-sign-in-alt"></i> লগইন করুন</button>`;
+    return;
+  }
+  const rate = cfg.pointRate || 0.1;
+  el.innerHTML = `
+    <div class="prof-header">
+      <div class="prof-av">${uData.photoURL?`<img src="${uData.photoURL}" onerror="this.remove()">`:'👤'}</div>
+      <div>
+        <div class="prof-name">${esc(uData.name||'ব্যবহারকারী')}</div>
+        <div class="prof-id">ID: ${curUser.uid.slice(0,18)}...</div>
+        <div class="prof-badge ${uPremium?'pb-prem':'pb-free'}">${uPremium?'👑 PREMIUM':'🆓 FREE'}</div>
+      </div>
+    </div>
+    <div class="prof-stat-row">
+      <div class="pstat"><div class="pstat-val">${uPts}</div><div class="pstat-lbl">পয়েন্ট</div></div>
+      <div class="pstat"><div class="pstat-val">${uRefs}</div><div class="pstat-lbl">রেফারেল</div></div>
+      <div class="pstat"><div class="pstat-val">৳${(uPts*rate).toFixed(0)}</div><div class="pstat-lbl">ব্যালেন্স</div></div>
+    </div>
+    <div class="ref-box">
+      <div class="card-ttl" style="font-size:12px;font-weight:800;color:var(--red);margin-bottom:10px"><i class="fa fa-link"></i> রেফারেল লিংক</div>
+      <div class="ref-link-row">
+        <span class="ref-link-txt">${location.origin+location.pathname}?ref=${curUser.uid}</span>
+        <button class="ref-copy" onclick="copyRef()">কপি</button>
+      </div>
+    </div>
+    <div class="menu-item" onclick="showPage('earn')">
+      <div class="mi-icon" style="background:rgba(255,193,7,.1);color:var(--gold)"><i class="fa fa-trophy"></i></div>
+      <div class="mi-txt"><div class="mi-label">লিডারবোর্ড</div><div class="mi-sub">র‌্যাংকিং দেখুন</div></div>
+      <div class="mi-arr"><i class="fa fa-chevron-right"></i></div>
+    </div>
+    <div class="menu-item" onclick="openPremModal()">
+      <div class="mi-icon" style="background:rgba(255,193,7,.1);color:var(--gold)"><i class="fa fa-crown"></i></div>
+      <div class="mi-txt"><div class="mi-label">প্রিমিয়াম</div><div class="mi-sub">সীমাহীন মুভি দেখুন</div></div>
+      <div class="mi-arr"><i class="fa fa-chevron-right"></i></div>
+    </div>
+    <div class="menu-item" onclick="openChatAdmin()">
+      <div class="mi-icon" style="background:rgba(0,136,204,.1);color:var(--blue)"><i class="fa fa-headset"></i></div>
+      <div class="mi-txt"><div class="mi-label">সাপোর্ট</div><div class="mi-sub">Admin-এর সাথে কথা বলুন</div></div>
+      <div class="mi-arr"><i class="fa fa-chevron-right"></i></div>
+    </div>
+    ${cfg.telegramLink?`<div class="menu-item" onclick="window.open('${cfg.telegramLink}','_blank')">
+      <div class="mi-icon" style="background:rgba(0,136,204,.1);color:var(--blue)"><i class="fab fa-telegram"></i></div>
+      <div class="mi-txt"><div class="mi-label">Telegram Channel</div><div class="mi-sub">আপডেট পান</div></div>
+      <div class="mi-arr"><i class="fa fa-chevron-right"></i></div>
+    </div>`:''}
+    <div class="menu-item" onclick="doLogout()" style="margin-top:6px">
+      <div class="mi-icon" style="background:rgba(229,0,0,.1);color:var(--red)"><i class="fa fa-sign-out-alt"></i></div>
+      <div class="mi-txt"><div class="mi-label">লগআউট</div></div>
+      <div class="mi-arr"><i class="fa fa-chevron-right"></i></div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PREMIUM
+// ─────────────────────────────────────────────────────────────
+function openPremModal(){
+  const pkgList = document.getElementById('pkgsList');
+  pkgList.innerHTML = Object.entries(pkgs).map(([k,p])=>`
+    <div class="pkg-card ${selPkgKey===k?'selected':''}" onclick="selPkg('${k}')">
+      <div class="pkg-name">${esc(p.name||k)}</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span class="pkg-price">৳${p.price||0}</span>
+        <span class="pkg-dur">${p.duration||''}</span>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-top:4px">${esc(p.features||'')}</div>
+    </div>`).join('') || '<div class="empty-state"><p>কোনো প্যাকেজ নেই</p></div>';
+  document.getElementById('pkgPayForm').style.display = 'none';
+  document.getElementById('pmNoteBox').textContent = cfg.pmNote || '';
+  document.getElementById('premModal').classList.add('show');
+}
+
+function selPkg(k){
+  selPkgKey = k;
+  document.querySelectorAll('.pkg-card').forEach(c=>c.classList.toggle('selected', c.onclick?.toString().includes(`'${k}'`)));
+  document.getElementById('pkgPayForm').style.display = 'block';
+  document.getElementById('pmNoteBox').textContent = cfg.pmNote || '';
+}
+
+function closePremModal(){ document.getElementById('premModal').classList.remove('show'); }
+
+async function submitPrem(){
+  if (!curUser){ openAuthModal(); return; }
+  const txn = document.getElementById('txnInp').value.trim();
+  if (!txn){ toast('Transaction ID দিন!'); return; }
+  const pk = pkgs[selPkgKey];
+  await db.ref('subRequests').push({
+    userId:curUser.uid, package:pk?.name, txnId:txn,
+    amount:pk?.price, status:'pending', ts:Date.now()
+  });
+  toast('✅ রিকুয়েস্ট পাঠানো হয়েছে! Admin অনুমোদন করলে সক্রিয় হবে।');
+  closePremModal();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INBOX
+// ─────────────────────────────────────────────────────────────
+function openInbox(){
+  document.getElementById('inboxModal').classList.add('show');
+  if (!curUser){ document.getElementById('inboxBody').innerHTML='<div class="empty-state"><i class="fa fa-lock"></i><p>লগইন করুন</p></div>'; return; }
+  db.ref('userInbox/'+curUser.uid).once('value', snap=>{
+    const msgs = snap.val() || {};
+    // Mark all read
+    Object.keys(msgs).forEach(k=>{ if (!msgs[k].read) db.ref('userInbox/'+curUser.uid+'/'+k+'/read').set(true); });
+    const arr = Object.values(msgs).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    document.getElementById('inboxBody').innerHTML = arr.length
+      ? arr.map(m=>`<div class="inbox-item ${m.read?'':'unread'}">
+          <div class="ii-top"><div class="ii-title">${esc(m.title||'')}</div><div class="ii-time">${timeAgo(m.ts)}</div></div>
+          <div class="ii-body">${esc(m.body||'')}</div>
+          ${m.bonusPts>0?`<div class="ii-bonus">🎁 +${m.bonusPts} পয়েন্ট পেয়েছেন</div>`:''}
+          ${m.actionLink?`<a class="ii-btn" href="${m.actionLink}" target="_blank">${esc(m.btnText||'দেখুন')}</a>`:''}
+        </div>`).join('')
+      : '<div class="empty-state"><i class="fa fa-envelope-open"></i><p>ইনবক্স খালি</p></div>';
+  });
+}
+function closeInbox(){ document.getElementById('inboxModal').classList.remove('show'); }
+
+// ─────────────────────────────────────────────────────────────
+//  ADMIN CHAT
+// ─────────────────────────────────────────────────────────────
+function openChatAdmin(){
+  if (!curUser){ openAuthModal(); return; }
+  document.getElementById('chatPage').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  loadChatMsgs();
+}
+
+function closeChatAdmin(){
+  document.getElementById('chatPage').classList.remove('show');
+  document.body.style.overflow = '';
+  if (chatListener){ db.ref('adminChats/'+curUser?.uid).off('value', chatListener); chatListener=null; }
+}
+
+function loadChatMsgs(){
+  const uid = curUser?.uid;
+  if (!uid) return;
+  if (chatListener) db.ref('adminChats/'+uid).off('value', chatListener);
+  chatListener = db.ref('adminChats/'+uid).on('value', snap=>{
+    const msgs = Object.values(snap.val()||{}).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const el = document.getElementById('chatMsgs');
+    el.innerHTML = msgs.map(m=>`
+      <div class="chat-msg ${m.senderType==='admin'?'theirs':'mine'}">
+        <div class="chat-bubble">${esc(m.text||'')}</div>
+        <div class="chat-time">${timeAgo(m.ts)}</div>
+      </div>`).join('') || '<div style="text-align:center;padding:30px;color:var(--t3);font-size:12px">কোনো মেসেজ নেই। হ্যালো বলুন! 👋</div>';
+    el.scrollTop = el.scrollHeight;
+  });
+}
+
+async function sendChatMsg(){
+  const uid = curUser?.uid;
+  if (!uid) return;
+  const inp = document.getElementById('chatInp');
+  const text = inp.innerText.trim();
+  if (!text) return;
+  inp.innerText = '';
+  await db.ref('adminChats/'+uid).push({
+    text, senderId:uid, senderName:uData.name||'User',
+    senderType:'member', ts:Date.now(), read:false
+  });
+  await db.ref('adminInbox').push({
+    userId:uid, userName:uData.name||'User', message:text, ts:Date.now(), read:false
+  });
+}
+
+function handleChatKey(e){
+  if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChatMsg(); }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SEARCH
+// ─────────────────────────────────────────────────────────────
+function openSearch(){
+  document.getElementById('searchPage').classList.add('show');
+  setTimeout(()=>document.getElementById('srchInp').focus(), 200);
+}
+
+function closeSearch(){
+  document.getElementById('searchPage').classList.remove('show');
+  document.getElementById('srchInp').value = '';
+  document.getElementById('srchGrid').innerHTML = '';
+  document.getElementById('srchInfo').textContent = '';
+}
+
+function doSearch(q){
+  q = q.trim();
+  if (!q){ document.getElementById('srchGrid').innerHTML=''; document.getElementById('srchInfo').textContent=''; return; }
+  const res = vids.filter(v => v.title?.toLowerCase().includes(q.toLowerCase()) || (v.category||'').toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('srchInfo').textContent = res.length + 'টি ফলাফল পাওয়া গেছে';
+  document.getElementById('srchGrid').innerHTML = res.length
+    ? res.map(v=>movieCard(v)).join('')
+    : '<div class="empty-state" style="grid-column:1/-1"><i class="fa fa-search"></i><p>কোনো ফলাফল নেই</p></div>';
+}
+
+function startVoiceSearch(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ toast('ভয়েস সার্চ সমর্থিত নয়'); return; }
+  const r = new SR(); r.lang='bn-BD'; r.start();
+  toast('🎙️ বলুন...');
+  r.onresult = e=>{ const q=e.results[0][0].transcript; document.getElementById('srchInp').value=q; doSearch(q); };
+}
+
+// ─────────────────────────────────────────────────────────────
+//  AUTH MODAL
+// ─────────────────────────────────────────────────────────────
+function openAuthModal(){ document.getElementById('authModal').classList.add('show'); }
+function closeAuthModal(){ document.getElementById('authModal').classList.remove('show'); }
+
+async function submitAuth(){
+  const name  = document.getElementById('authName').value.trim();
+  const phone = document.getElementById('authPhone').value.trim();
+  const code  = document.getElementById('authCountry').value;
+  if (!name){ toast('নাম লিখুন!'); return; }
+  if (!phone || phone.length < 7){ toast('ফোন নম্বর দিন!'); return; }
+  const fullPhone = code + phone.replace(/^0/,'').replace(/\D/g,'');
+  try {
+    let uid;
+    const existingUid = localStorage.getItem('ml_uid');
+    if (existingUid){
+      uid = existingUid;
+    } else {
+      const r = await auth.signInAnonymously();
+      uid = r.user.uid;
+      localStorage.setItem('ml_uid', uid);
+    }
+    curUser = { uid };
+    const snap = await db.ref('users/'+uid).get();
+    if (!snap.val()){
+      await db.ref('users/'+uid).set({
+        points:0, joined:Date.now(), name, phoneNumber:fullPhone,
+        loginType:'phone_form', referralCount:0, strikes:0
+      });
+      // Award referral bonus
+      if (storedRefBy && storedRefBy !== uid){
+        await db.ref('users/'+storedRefBy+'/points').transaction(p=>(p||0)+(cfg.gen1Rate||10));
+        await db.ref('users/'+storedRefBy+'/referralCount').transaction(n=>(n||0)+1);
+        await db.ref('users/'+uid+'/referredBy').set(storedRefBy);
+      }
+    } else {
+      await db.ref('users/'+uid).update({name, phoneNumber:fullPhone});
+    }
+    await loadUserData(uid);
+    closeAuthModal();
+    toast('✅ স্বাগতম, '+name+'!');
+    renderProfPage();
+    refreshPtsDisplay();
+  } catch(e){ toast('❌ ত্রুটি: '+e.message); }
+}
+
+async function guestLogin(){
+  try {
+    let uid = localStorage.getItem('ml_uid');
+    if (!uid){
+      const r = await auth.signInAnonymously();
+      uid = r.user.uid;
+      localStorage.setItem('ml_uid', uid);
+      await db.ref('users/'+uid).set({ points:0, joined:Date.now(), name:'Guest', loginType:'guest', referralCount:0, strikes:0 });
+    }
+    curUser = { uid };
+    await loadUserData(uid);
+    closeAuthModal();
+    toast('গেস্ট হিসেবে লগইন হয়েছে');
+    refreshPtsDisplay();
+  } catch(e){ toast('❌ '+e.message); }
+}
+
+function doLogout(){
+  if (!confirm('লগআউট করবেন?')) return;
+  auth.signOut().catch(()=>{});
+  localStorage.removeItem('ml_uid');
+  curUser = null; uData = {}; uPts = 0; uBanned = false; uPremium = false; uRefs = 0;
+  renderProfPage();
+  refreshPtsDisplay();
+  toast('লগআউট হয়েছে');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  POPUP NOTIFICATION
+// ─────────────────────────────────────────────────────────────
+function checkPopup(){
+  const p = cfg.popupNotif;
+  if (!p || p.enabled === false) return;
+  const seen = localStorage.getItem('popup_seen_'+p.id);
+  if (seen) return;
+  document.getElementById('pnIcon').textContent = p.icon || '📢';
+  document.getElementById('pnTitle').textContent = p.title || '';
+  document.getElementById('pnBody').textContent  = p.body  || '';
+  const btn = document.getElementById('pnBtn');
+  btn.textContent = p.btnText || 'দেখুন';
+  btn.href = p.btnLink || '#';
+  document.getElementById('popupNotif').classList.add('show');
+}
+
+function closePopup(){
+  const p = cfg.popupNotif;
+  if (p?.id) localStorage.setItem('popup_seen_'+p.id, '1');
+  document.getElementById('popupNotif').classList.remove('show');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PAGE NAVIGATION
+// ─────────────────────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name)?.classList.add('active');
+  document.getElementById('bn-'+name)?.classList.add('active');
+
+  // Render on demand
+  if (name==='task') renderTaskPage();
+  if (name==='earn') renderEarnPage();
+  if (name==='wallet') renderWalletPage();
+  if (name==='prof') renderProfPage();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PTS DISPLAY REFRESH
+// ─────────────────────────────────────────────────────────────
+function refreshPtsDisplay(){
+  const rate = cfg.pointRate || 0.1;
+  if (document.getElementById('ehPts')) document.getElementById('ehPts').textContent = uPts;
+  if (document.getElementById('ehBal')) document.getElementById('ehBal').textContent = '৳'+(uPts*rate).toFixed(2);
+  if (document.getElementById('whBal')) document.getElementById('whBal').textContent = '৳'+(uPts*rate).toFixed(2);
+  if (document.getElementById('whPts')) document.getElementById('whPts').textContent = uPts+' পয়েন্ট';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SPIN WHEEL (default prizes fallback)
+// ─────────────────────────────────────────────────────────────
+function getDefaultPrizes(){
+  return [
+    {label:'50 pts',  coins:50,  color:'#e50000', prob:20},
+    {label:'100 pts', coins:100, color:'#ffc107', prob:15},
+    {label:'25 pts',  coins:25,  color:'#7c3aed', prob:25},
+    {label:'খালি',    coins:0,   color:'#161616', prob:30},
+    {label:'200 pts', coins:200, color:'#16a34a', prob:8},
+    {label:'10 pts',  coins:10,  color:'#0088cc', prob:20},
+    {label:'500 pts', coins:500, color:'#ea580c', prob:2},
+    {label:'খালি',    coins:0,   color:'#161616', prob:30},
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UTILITIES
+// ─────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function getTodayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}${d.getMonth()}${d.getDate()}`;
+}
+
+function timeAgo(ts){
+  if (!ts) return '—';
+  const d = (Date.now()-ts)/1000;
+  if (d<60)  return 'এইমাত্র';
+  if (d<3600) return Math.floor(d/60)+'m আগে';
+  if (d<86400) return Math.floor(d/3600)+'h আগে';
+  return Math.floor(d/86400)+'d আগে';
+}
+
+let _tt;
+function toast(msg){
+  clearTimeout(_tt);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  _tt = setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(16px)'; }, 2800);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  REAL-TIME CONFIG SYNC
+//  Listens to key config nodes so Admin Panel changes
+//  (notice bar, task settings, etc.) appear instantly.
+// ─────────────────────────────────────────────────────────────
+function watchConfig(){
+  // Notice bar
+  db.ref('notice').on('value', snap=>{ cfg.notice=snap.val(); applyNoticeBar(); });
+  db.ref('noticeBarVisible').on('value', snap=>{ cfg.noticeBarVisible=snap.val()!==false; applyNoticeBar(); });
+  // Task settings
+  db.ref('bannerTasks').on('value', snap=>{ cfg.bannerTasks=snap.val()||{}; if(document.getElementById('pg-task').classList.contains('active')) renderTaskPage(); });
+  // Point rate
+  db.ref('pointRate').on('value', snap=>{ cfg.pointRate=snap.val()||0.1; refreshPtsDisplay(); });
+  // Movies (new/edited movies appear instantly)
+  db.ref('movies').on('value', snap=>{
+    const obj = snap.val()||{};
+    vids = Object.keys(obj).map(k=>({...obj[k],key:k})).reverse();
+    if (document.getElementById('pg-home').classList.contains('active')){
+      renderMovGrid(currentCat);
+      renderHero();
+    }
+  });
+  // Popup
+  db.ref('popupNotif').on('value', snap=>{ cfg.popupNotif=snap.val(); });
+  // Payment logos
+  db.ref('paymentLogos').on('value', snap=>{ payLogos=snap.val()||{}; cfg.paymentLogos=payLogos; renderWalletMethods(); });
+}
+
+function applyNoticeBar(){
+  const nb = document.getElementById('noticeBar');
+  if (cfg.notice && cfg.noticeBarVisible!==false){
+    document.getElementById('nbInner').textContent = '📢  '+cfg.notice+'   •   ';
+    nb.style.display='block';
+  } else {
+    nb.style.display='none';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  START
+// ─────────────────────────────────────────────────────────────
+boot().then(()=>{
+  // Start real-time watchers AFTER initial boot (non-blocking)
+  watchConfig();
+});
+</script>
+</body>
+</html>
