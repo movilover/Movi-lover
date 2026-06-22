@@ -466,14 +466,11 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .wdhs-paid{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);font-size:8px;padding:2px 8px;border-radius:5px;font-weight:700;display:inline-block}
 .wdhs-rej{background:rgba(229,0,0,.1);color:var(--red);border:1px solid rgba(229,0,0,.2);font-size:8px;padding:2px 8px;border-radius:5px;font-weight:700;display:inline-block}
 
-/* ════════════════════════════════════
-   ★★★ PROFILE PAGE — NEW PREMIUM DESIGN
-   ════════════════════════════════════ */
+/* PROFILE PAGE */
 #profilePage{display:none;padding:0 0 76px}
 .prof-hero{background:linear-gradient(135deg,#1a0000,#0d0000,#050510);padding:32px 14px 24px;position:relative;overflow:hidden}
 .prof-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(229,0,0,.18),transparent 70%)}
 .prof-hero::after{content:'';position:absolute;bottom:-40px;left:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.1),transparent 70%)}
-/* Decorative lines */
 .prof-hero-deco{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .prof-hero-deco::before{content:'';position:absolute;top:0;left:50%;width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(229,0,0,.15),transparent)}
 .prof-hero-av{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red2));display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;margin:0 auto 14px;overflow:hidden;box-shadow:0 0 0 3px rgba(229,0,0,.4),0 0 0 6px rgba(229,0,0,.15),0 0 32px rgba(229,0,0,.4);position:relative;z-index:1;transition:.3s}
@@ -482,8 +479,6 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .prof-hero-sub{text-align:center;font-size:10px;color:var(--t3);margin-bottom:14px;position:relative;z-index:1}
 .prem-badge-hero{display:flex;align-items:center;justify-content:center;gap:5px;width:fit-content;margin:0 auto 16px;background:linear-gradient(90deg,#7c3a0a,var(--gold),var(--gold2),#7c3a0a);background-size:200% 100%;animation:goldShine 2.5s linear infinite;color:#000;font-size:9px;font-weight:900;padding:5px 18px;border-radius:12px;box-shadow:0 3px 16px rgba(255,193,7,.45);position:relative;z-index:1}
 @keyframes goldShine{0%{background-position:0%}100%{background-position:200%}}
-
-/* ★ NEW STAT CARDS — বড় রঙিন ও স্পষ্ট */
 .prof-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 12px}
 .ps2{border-radius:18px;padding:16px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.18s;position:relative;overflow:hidden;border:1.5px solid transparent}
 .ps2:active{transform:scale(.96)}
@@ -491,54 +486,34 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .ps2-content{flex:1;min-width:0}
 .ps2-val{font-size:26px;font-weight:900;line-height:1;margin-bottom:3px}
 .ps2-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;opacity:.75}
-
-/* পয়েন্ট — গোল্ড */
 .ps2-pts{background:linear-gradient(135deg,rgba(255,193,7,.2),rgba(255,193,7,.06));border-color:rgba(255,193,7,.4)}
 .ps2-pts .ps2-icon-wrap{background:rgba(255,193,7,.2)}
 .ps2-pts .ps2-val{color:var(--gold);text-shadow:0 2px 12px rgba(255,193,7,.5)}
 .ps2-pts .ps2-lbl{color:rgba(255,193,7,.85)}
-
-/* রেফারেল — গ্রিন */
 .ps2-refs{background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.06));border-color:rgba(34,197,94,.4)}
 .ps2-refs .ps2-icon-wrap{background:rgba(34,197,94,.2)}
 .ps2-refs .ps2-val{color:var(--green);text-shadow:0 2px 12px rgba(34,197,94,.5)}
 .ps2-refs .ps2-lbl{color:rgba(34,197,94,.85)}
-
-/* দেখা ভিডিও — ব্লু */
 .ps2-watched{background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(59,130,246,.06));border-color:rgba(59,130,246,.4)}
 .ps2-watched .ps2-icon-wrap{background:rgba(59,130,246,.2)}
 .ps2-watched .ps2-val{color:var(--blue);text-shadow:0 2px 12px rgba(59,130,246,.5)}
 .ps2-watched .ps2-lbl{color:rgba(59,130,246,.85)}
-
-/* সেভ করা — পার্পল */
 .ps2-saved{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(168,85,247,.06));border-color:rgba(168,85,247,.4)}
 .ps2-saved .ps2-icon-wrap{background:rgba(168,85,247,.2)}
 .ps2-saved .ps2-val{color:var(--purple);text-shadow:0 2px 12px rgba(168,85,247,.5)}
 .ps2-saved .ps2-lbl{color:rgba(168,85,247,.85)}
-
-/* ★ ONLY 2 ACTION BUTTONS — হেল্প ও লগআউট */
 .prof-actions-2btn{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px 16px}
 .pa2-btn{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:16px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
 .pa2-btn:active{transform:scale(.96)}
-.pa2-btn::before{content:'';position:absolute;inset:0;opacity:0;transition:.2s}
-.pa2-btn:hover::before{opacity:1}
 .pa2-ic{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .pa2-txt b{display:block;font-size:11px;font-weight:800;color:var(--t1);margin-bottom:2px}
 .pa2-txt span{font-size:9px;color:var(--t3)}
-
-/* হেল্প বাটন — পার্পল */
 .pa2-help{border-color:rgba(168,85,247,.3);background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(168,85,247,.03))}
-.pa2-help::before{background:rgba(168,85,247,.07)}
 .pa2-help .pa2-ic{background:rgba(168,85,247,.2);color:var(--purple)}
 .pa2-help .pa2-txt span{color:rgba(168,85,247,.6)}
-
-/* লগআউট বাটন — রেড */
 .pa2-logout{border-color:rgba(229,0,0,.3);background:linear-gradient(135deg,rgba(229,0,0,.1),rgba(229,0,0,.03))}
-.pa2-logout::before{background:rgba(229,0,0,.06)}
 .pa2-logout .pa2-ic{background:rgba(229,0,0,.2);color:var(--red)}
 .pa2-logout .pa2-txt span{color:rgba(229,0,0,.5)}
-
-/* ★ GEN TREE — PREMIUM REDESIGN */
 .gen-tree-section{padding:0 12px 14px}
 .gen-tree-card{background:linear-gradient(135deg,#0d1a0a,#0a1a0a,#0a0d1a);border:1.5px solid rgba(34,197,94,.2);border-radius:22px;overflow:hidden}
 .gen-tree-header{padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(34,197,94,.12)}
@@ -549,7 +524,6 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .gen-tree-total{text-align:right}
 .gen-tree-total-num{font-size:20px;font-weight:900;color:var(--green)}
 .gen-tree-total-lbl{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
-/* Rate cards */
 .gen-rates-premium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:16px 18px}
 .grc{border-radius:14px;padding:14px 10px;text-align:center;position:relative;overflow:hidden}
 .grc::before{content:'';position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;filter:blur(20px);opacity:.4}
@@ -571,7 +545,6 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .grc-g1 .grc-count{color:var(--red)}
 .grc-g2 .grc-count{color:var(--gold)}
 .grc-g3 .grc-count{color:var(--green)}
-/* Earn breakdown */
 .gen-earn-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid rgba(34,197,94,.1)}
 .gen-earn-item{display:flex;flex-direction:column;align-items:center;gap:2px}
 .gen-earn-dot{width:8px;height:8px;border-radius:50%;margin-bottom:3px}
@@ -953,7 +926,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
   <div id="earnPage"></div>
   <div id="walletPage"></div>
 
-  <!-- ★★★ PROFILE PAGE — NEW UI ★★★ -->
+  <!-- PROFILE PAGE -->
   <div id="profilePage">
     <div class="prof-hero">
       <div class="prof-hero-deco"></div>
@@ -962,8 +935,6 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
       <div class="prof-hero-sub" id="profHeroSub">লগইন করা হয়নি</div>
       <div id="premBadgeHero" style="display:none" class="prem-badge-hero"><i class="fa fa-crown" style="font-size:9px"></i> Premium সদস্য</div>
     </div>
-
-    <!-- ★ নতুন স্ট্যাট কার্ড — বড় আইকন সহ -->
     <div class="prof-stats-grid">
       <div class="ps2 ps2-pts" onclick="showPage('earn')">
         <div class="ps2-icon-wrap">💰</div>
@@ -994,11 +965,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
         </div>
       </div>
     </div>
-
-    <!-- ★ শুধুমাত্র ২টি বাটন: হেল্প ও লগআউট -->
     <div class="prof-actions-2btn" id="profActionsGrid"></div>
-
-    <!-- ★ Three Generation — প্রিমিয়াম ডিজাইন -->
     <div class="gen-tree-section" id="genTreeWrap"></div>
   </div>
 
@@ -1057,7 +1024,7 @@ let adState={active:false,timerSec:15,remaining:15,reward:0,type:null,vidKey:nul
 let spinAdState={active:false,timerSec:15,remaining:15,intervalId:null};
 
 // ════════════════════════════════════════════════════════════
-//  CODE MANAGER — LIVE PATCH SYSTEM
+//  ★★★ CODE MANAGER — LIVE PATCH SYSTEM (FIXED) ★★★
 // ════════════════════════════════════════════════════════════
 let cmLoadedFeatures={};
 let cmFirstLoad=true;
@@ -1080,11 +1047,39 @@ function initCodeManager(){
   });
 }
 
+// ✅ FIXED: new Function() ব্যবহার করে window scope-এ সঠিকভাবে execute হবে
 function safeExecCode(key,code){
   if(!code||!code.trim())return;
-  try{window.eval(code);}catch(e){console.warn(`[CodeManager] Failed "${key}":`,e);}
+  try{
+    const fn=new Function(code);
+    fn.call(window);
+  }catch(e){
+    console.warn(`[CodeManager] Failed "${key}":`,e);
+  }
 }
-function executePatch(key,code){console.log(`[CodeManager] 🔄 Live patch: ${key}`);safeExecCode(key,code);}
+
+// ✅ FIXED: কোড run করার পর active page re-render করে — সাথে সাথে আপডেট দেখাবে
+function executePatch(key,code){
+  console.log(`[CodeManager] 🔄 Live patch: ${key}`);
+  safeExecCode(key,code);
+  setTimeout(()=>{
+    const pages={
+      'homePage':'home',
+      'taskPage':'task',
+      'earnPage':'earn',
+      'walletPage':'wallet',
+      'profilePage':'prof'
+    };
+    for(const[id,name] of Object.entries(pages)){
+      const el=document.getElementById(id);
+      if(el&&el.style.display==='block'){
+        showPage(name);
+        break;
+      }
+    }
+  },200);
+}
+
 function showCmLiveIndicator(){const el=document.getElementById('cmLiveIndicator');if(!el)return;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
 
 // ════════════════════════════════════════════════════════════
@@ -1339,7 +1334,7 @@ function escHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function showPage(p){['homePage','taskPage','earnPage','walletPage','profilePage','searchPage'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const map={home:'homePage',task:'taskPage',earn:'earnPage',wallet:'walletPage',prof:'profilePage'};const target=document.getElementById(map[p]);if(target)target.style.display='block';['home','task','wallet'].forEach(pg=>{const bn=document.getElementById('bn-'+pg);if(bn)bn.classList.toggle('active',pg===p);});document.getElementById('bn-earn').classList.toggle('active',p==='earn');document.getElementById('bn-prof').classList.toggle('active',p==='prof');if(p==='earn')renderEarnPage();if(p==='task')renderTaskPage();if(p==='wallet')renderWalletPage();if(p==='prof')renderProfilePage();if(p==='home')document.getElementById('searchPage').style.display='none';}
 
 // ════════════════════════════════════════════════════════════
-//  ★★★ PROFILE PAGE — NEW RENDER FUNCTIONS
+//  PROFILE PAGE
 // ════════════════════════════════════════════════════════════
 function renderProfilePage(){
   const uid=curUser?.uid||(tgUser?'tg_'+tgUser.id:null);
@@ -1352,13 +1347,10 @@ function renderProfilePage(){
   document.getElementById('profHeroName').innerText=displayName;
   document.getElementById('profHeroSub').innerText=displaySub;
   const pb=document.getElementById('premBadgeHero');if(pb)pb.style.display=isPrem?'flex':'none';
-  // stat values
   const ps=document.getElementById('ph-pts');if(ps)ps.innerText=uPts;
   const pr=document.getElementById('ph-refs');if(pr)pr.innerText=uRefs;
   const pw=document.getElementById('ph-watched');if(pw)pw.innerText=Math.max(hist.length,uWatched);
   const psa=document.getElementById('ph-saved');if(psa)psa.innerText=wl.length;
-
-  // ★ শুধু ২টি বাটন: হেল্প সেন্টার + লগআউট
   const grid=document.getElementById('profActionsGrid');
   if(uid){
     grid.innerHTML=`
@@ -1384,7 +1376,6 @@ function renderProfilePage(){
   renderGenTree();
 }
 
-// ★★★ THREE GEN TREE — PREMIUM REDESIGN (লজিক অপরিবর্তিত)
 function renderGenTree(){
   const rates=getGenRates();
   const wrap=document.getElementById('genTreeWrap');
