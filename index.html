@@ -595,7 +595,114 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .balance-notif{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(90deg,#0a2a0a,#0d3d0d);color:var(--green);padding:10px 20px;border-radius:22px;font-size:11px;font-weight:700;z-index:9998;opacity:0;transition:.35s;border:1px solid rgba(34,197,94,.3);pointer-events:none;white-space:nowrap}
 .balance-notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* CODE MANAGER LIVE PATCH INDICATOR */
+/* ── PREMIUM BUTTON — GLOW ANIMATION ── */
+.ql-premium{
+  position:relative;
+  overflow:hidden;
+  animation:premGlow 2s ease-in-out infinite;
+}
+@keyframes premGlow{
+  0%,100%{
+    box-shadow:0 0 6px rgba(255,193,7,.4),0 0 12px rgba(229,0,0,.2);
+    border-color:rgba(255,193,7,.5);
+  }
+  50%{
+    box-shadow:0 0 14px rgba(255,193,7,.8),0 0 28px rgba(229,0,0,.5);
+    border-color:rgba(255,193,7,.9);
+  }
+}
+.ql-premium::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  animation:shimmer 2s infinite;
+}
+/* ── VIRAL VIDEO PREMIUM POPUP ── */
+#viralPremPopup{
+  position:fixed;inset:0;z-index:4800;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(14px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+#viralPremPopup.show{display:flex;animation:fadeIn .3s ease}
+.vpp-sheet{
+  background:linear-gradient(180deg,#1a0a00,#0d0000,var(--bg1));
+  border-top:2px solid var(--gold);
+  border-radius:24px 24px 0 0;
+  width:100%;max-height:85vh;overflow-y:auto;
+  padding:20px 16px 36px;
+  animation:slideUp .35s cubic-bezier(.34,1.56,.64,1);
+}
+.vpp-glow-badge{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  background:linear-gradient(90deg,#7c3a0a,var(--gold),#fff,var(--gold),#7c3a0a);
+  background-size:300% 100%;
+  animation:goldShine 2s linear infinite;
+  color:#000;font-size:11px;font-weight:900;
+  padding:8px 24px;border-radius:14px;
+  box-shadow:0 4px 24px rgba(255,193,7,.6),0 0 40px rgba(255,193,7,.3);
+  margin:0 auto 16px;width:fit-content;
+  position:relative;overflow:hidden;
+}
+.vpp-glow-badge::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  animation:shimmer 1.5s infinite;
+}
+/* ── VIRAL VIDEO PREMIUM CATEGORY ── */
+@keyframes viralGlow{
+  0%,100%{box-shadow:0 0 8px rgba(255,193,7,.5),0 0 16px rgba(229,0,0,.3);border-color:rgba(255,193,7,.6);}
+  50%{box-shadow:0 0 18px rgba(255,193,7,.9),0 0 32px rgba(229,0,0,.6);border-color:rgba(255,193,7,1);}
+}
+@keyframes viralDot{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.4)}
+}
+.cn-viral span{
+  background:linear-gradient(90deg,var(--gold),var(--red),var(--gold));
+  background-size:200% 100%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:goldShine 2s linear infinite;
+  font-weight:800 !important;
+}
+
+/* ── LIGHT MODE COLOR FIX ── */
+[data-theme="light"] .h-qlink{color:#333 !important;border-color:#ccc !important;background:rgba(0,0,0,.06) !important;}
+[data-theme="light"] .h-qlink.ql-premium{color:#b8860b !important;border-color:rgba(184,134,11,.5) !important;background:rgba(184,134,11,.1) !important;}
+[data-theme="light"] .h-qlink.ql-wallet{color:#c2410c !important;border-color:rgba(194,65,12,.4) !important;background:rgba(194,65,12,.08) !important;}
+[data-theme="light"] .h-qlink.ql-watchlater{color:#15803d !important;border-color:rgba(21,128,61,.4) !important;background:rgba(21,128,61,.08) !important;}
+[data-theme="light"] .h-qlink.ql-history{color:#1d4ed8 !important;border-color:rgba(29,78,216,.4) !important;background:rgba(29,78,216,.08) !important;}
+[data-theme="light"] .h-qlink.ql-help{color:#6d28d9 !important;border-color:rgba(109,40,217,.4) !important;background:rgba(109,40,217,.08) !important;}
+[data-theme="light"] .cn span{color:#555 !important;}
+[data-theme="light"] .cn.active span{color:var(--red) !important;}
+[data-theme="light"] .cn-ic{background:#e8e8e8 !important;}
+[data-theme="light"] .bn span{color:#555 !important;}
+[data-theme="light"] .bn i{color:#555 !important;}
+[data-theme="light"] .bn.active span,[data-theme="light"] .bn.active i{color:var(--red) !important;}
+[data-theme="light"] .vcard{background:#fff !important;border-color:#ddd !important;}
+[data-theme="light"] .vtitle{color:#111 !important;}
+[data-theme="light"] .h-btn{background:#eee !important;border-color:#ddd !important;color:#333 !important;}
+[data-theme="light"] .logo{color:#111 !important;}
+[data-theme="light"] .header{background:rgba(255,255,255,.97) !important;}
+[data-theme="light"] .header-action-row{background:#f5f5f5 !important;}
+[data-theme="light"] .sec-title{color:#111 !important;}
+[data-theme="light"] .bnav{background:rgba(255,255,255,.97) !important;border-color:#ddd !important;}
+[data-theme="light"] .task-v-card{background:#fff !important;border-color:#ddd !important;}
+[data-theme="light"] .task-v-name{color:#111 !important;}
+[data-theme="light"] .wd-inp-box{background:#f0f0f0 !important;border-color:#ccc !important;color:#111 !important;}
+[data-theme="light"] .wdm{background:#f5f5f5 !important;border-color:#ddd !important;}
+[data-theme="light"] .wdm-name{color:#111 !important;}
+[data-theme="light"] .pm-body{background:#f5f5f5 !important;}
+[data-theme="light"] .pm-body h2{color:#111 !important;}
+[data-theme="light"] .pm-desc{background:#fff !important;color:#333 !important;border-color:#ddd !important;}
+[data-theme="light"] .cmt-body{background:#fff !important;border-color:#ddd !important;}
+[data-theme="light"] .cmt-text{color:#444 !important;}
+[data-theme="light"] .cmt-user{color:#111 !important;}
+[data-theme="light"] .earn-hero .eh-val{color:#fff !important;}
+[data-theme="light"] .ca-msg.mine .ca-msg-bubble{color:#fff !important;}
+
 #cmLiveIndicator{position:fixed;bottom:72px;right:14px;z-index:800;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);border-radius:20px;padding:5px 12px;font-size:9px;color:#c4b5fd;font-weight:700;display:none;align-items:center;gap:5px;pointer-events:none}
 #cmLiveIndicator.show{display:flex}
 #cmLiveIndicator::before{content:'';width:6px;height:6px;border-radius:50%;background:#a855f7;animation:cmPulse .8s infinite}
@@ -639,6 +746,58 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 
 <div id="cmLiveIndicator">⚡ Code Updated</div>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<!-- VIRAL VIDEO PREMIUM POPUP -->
+<div id="viralPremPopup">
+  <div class="vpp-sheet">
+    <div style="width:34px;height:4px;background:#333;border-radius:10px;margin:0 auto 18px"></div>
+    <button onclick="closeViralPrem()" style="position:absolute;top:18px;right:16px;background:none;border:none;color:var(--t2);font-size:18px;cursor:pointer"><i class="fa fa-times"></i></button>
+
+    <!-- Glow Badge -->
+    <div class="vpp-glow-badge">
+      <i class="fa fa-crown" style="font-size:13px"></i>
+      ✨ VIRAL VIDEO PREMIUM ✨
+    </div>
+
+    <!-- Features -->
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:6px">সীমাহীন বিনোদন উপভোগ করুন</div>
+      <div style="font-size:11px;color:var(--t3);line-height:1.7">বিজ্ঞাপন মুক্ত • HD কোয়ালিটি • সব premium ভিডিও</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px">
+      <div style="background:rgba(255,193,7,.07);border:1px solid rgba(255,193,7,.2);border-radius:13px;padding:13px;text-align:center">
+        <div style="font-size:22px;margin-bottom:5px">🚫</div>
+        <div style="font-size:10px;font-weight:700;color:#fff">বিজ্ঞাপন নেই</div>
+        <div style="font-size:9px;color:var(--t3)">100% Ad-Free</div>
+      </div>
+      <div style="background:rgba(229,0,0,.07);border:1px solid rgba(229,0,0,.2);border-radius:13px;padding:13px;text-align:center">
+        <div style="font-size:22px;margin-bottom:5px">🎬</div>
+        <div style="font-size:10px;font-weight:700;color:#fff">HD ভিডিও</div>
+        <div style="font-size:9px;color:var(--t3)">সর্বোচ্চ মান</div>
+      </div>
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:13px;padding:13px;text-align:center">
+        <div style="font-size:22px;margin-bottom:5px">👑</div>
+        <div style="font-size:10px;font-weight:700;color:#fff">Exclusive</div>
+        <div style="font-size:9px;color:var(--t3)">Premium কন্টেন্ট</div>
+      </div>
+      <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:13px;padding:13px;text-align:center">
+        <div style="font-size:22px;margin-bottom:5px">⚡</div>
+        <div style="font-size:10px;font-weight:700;color:#fff">Fast Stream</div>
+        <div style="font-size:9px;color:var(--t3)">দ্রুত লোডিং</div>
+      </div>
+    </div>
+
+    <!-- Packages -->
+    <div id="viralPkgList"></div>
+    <div class="pay-box" id="viralPayBox" style="display:none"></div>
+    <input class="txn-inp" id="viralTxnInp" placeholder="Transaction ID লিখুন" style="display:none">
+    <button class="prem-submit" id="viralSubmitBtn" onclick="submitViralPrem()" style="display:none;background:linear-gradient(90deg,var(--gold),var(--gold2));color:#000;font-weight:900">
+      <i class="fa fa-paper-plane"></i> সাবমিট করুন
+    </button>
+    <div id="viralPmNote" style="font-size:10px;color:var(--t3);text-align:center;margin-top:10px;line-height:1.6"></div>
+  </div>
+</div>
 
 <!-- BAN MODAL -->
 <div id="banModal">
@@ -872,7 +1031,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
         <span class="h-user-name" id="hUserName">User</span>
       </div>
       <div class="h-action-divider"></div>
-      <div class="h-qlink ql-premium" onclick="openPremModal()"><i class="fa fa-crown"></i> Premium</div>
+      <div class="h-qlink ql-premium" onclick="openViralPremModal()"><i class="fa fa-crown"></i> Premium</div>
       <div class="h-qlink ql-wallet" onclick="showPage('wallet')"><i class="fa fa-wallet"></i> ওয়ালেট</div>
       <div class="h-qlink ql-watchlater" onclick="showWL()"><i class="fa fa-bookmark"></i> Watch Later</div>
       <div class="h-qlink ql-history" onclick="showHist()"><i class="fa fa-history"></i> ইতিহাস</div>
@@ -1242,7 +1401,47 @@ function renderSocial(d){const rows=[{k:'telegramLink',i:'fab fa-telegram',c:'#0
 //  RENDER ALL
 // ════════════════════════════════════════════════════════════
 function renderAll(){renderCatNav();renderHero();renderTrending();renderCatSecs();renderMainGrid();renderPkgsList();renderNotifs();setTimeout(()=>{document.getElementById('loader').classList.add('hide');const a=document.getElementById('app');a.style.display='block';a.style.opacity='0';setTimeout(()=>{a.style.transition='opacity .5s';a.style.opacity='1';},30);updateProfUI();},2400);}
-function renderCatNav(){document.getElementById('catNav').innerHTML=`<div class="cn active" id="cn-all" onclick="filterCat(null,this)"><div class="cn-ic">🏠</div><span>হোম</span></div>`+cats.map(c=>{const ic=catIcons[c];let icH=ic&&ic.startsWith('http')?`<img src="${ic}" alt="${c}">`:(ic||'🎬');return`<div class="cn" onclick="filterCat('${c}',this)"><div class="cn-ic">${icH}</div><span>${c}</span></div>`;}).join('');}
+function renderCatNav(){
+  const VIRAL_CAT='Viral Video Premium'; // এই নামের category special হবে
+
+  document.getElementById('catNav').innerHTML=
+    `<div class="cn active" id="cn-all" onclick="filterCat(null,this)">
+      <div class="cn-ic">🏠</div><span>হোম</span>
+    </div>`
+    +cats.map(c=>{
+      const ic=catIcons[c];
+      let icH=ic&&ic.startsWith('http')?`<img src="${ic}" alt="${c}">`:(ic||'🎬');
+
+      // ── Viral Video Premium — special glow button ──
+      if(c===VIRAL_CAT){
+        return`<div class="cn cn-viral" onclick="openViralPremModal()" id="cn-viral-btn"
+          style="position:relative;overflow:visible">
+          <div class="cn-ic cn-ic-viral" style="
+            background:linear-gradient(135deg,rgba(255,193,7,.25),rgba(229,0,0,.15));
+            border:1.5px solid rgba(255,193,7,.5);
+            box-shadow:0 0 10px rgba(255,193,7,.4),0 0 20px rgba(229,0,0,.2);
+            animation:viralGlow 1.8s ease-in-out infinite;
+            position:relative;
+          ">${icH}
+            <div style="
+              position:absolute;top:-4px;right:-4px;
+              width:10px;height:10px;border-radius:50%;
+              background:var(--gold);
+              box-shadow:0 0 6px var(--gold);
+              animation:viralDot .9s ease-in-out infinite;
+            "></div>
+          </div>
+          <span style="color:var(--gold);font-weight:800;font-size:8px">${c}</span>
+        </div>`;
+      }
+
+      // ── Normal category ──
+      return`<div class="cn" onclick="filterCat('${c}',this)">
+        <div class="cn-ic">${icH}</div>
+        <span>${c}</span>
+      </div>`;
+    }).join('');
+}
 function renderHero(){const top=vids.slice(0,6);if(!top.length)return;const w=document.getElementById('heroWrap');w.style.display='block';w.innerHTML=top.map((v,i)=>`<div class="hero-slide ${i===0?'active':''}" data-i="${i}"><img src="${v.thumb}" onerror="this.src='https://via.placeholder.com/400x185/111/333?text=No+Image'"><div class="hero-ov"></div><div class="hero-info"><div class="hero-cat">${v.category||'Video'}</div><div class="hero-title">${v.title}</div></div><div class="hero-play" onclick="playVid('${v.key}')"><i class="fa fa-play" style="margin-left:2px"></i></div></div>`).join('')+`<div class="hero-dots">${top.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="goHero(${i})"></div>`).join('')}</div>`;clearInterval(heroTmr);heroTmr=setInterval(()=>goHero((heroIdx+1)%top.length),4000);}
 function goHero(i){heroIdx=i;document.querySelectorAll('.hero-slide').forEach((s,j)=>s.classList.toggle('active',j===i));document.querySelectorAll('.hero-dot').forEach((d,j)=>d.classList.toggle('active',j===i));}
 function renderTrending(){const sec=document.getElementById('trendSec');let tv=trendKeys.length?trendKeys.map(k=>vids.find(v=>v.key===k)).filter(Boolean):vids.slice(0,8);if(!tv.length){sec.style.display='none';return;}sec.style.display='block';document.getElementById('trendGrid').innerHTML=tv.map(v=>cardH(v)).join('');}
@@ -1353,7 +1552,40 @@ function toggleLike(){if(!curVid)return;const key=curVid.key,had=lks.includes(ke
 function toggleDislike(){if(!curVid)return;db.ref('movies/'+curVid.key+'/dislikes').transaction(n=>(n||0)+1);toast('ধন্যবাদ!');}
 function toggleWL(key,e){if(e)e.stopPropagation();const wasIn=wl.includes(key);wl=wasIn?wl.filter(k=>k!==key):[...wl,key];localStorage.setItem('wl',JSON.stringify(wl));const el=document.getElementById('ph-saved');if(el)el.innerText=wl.length;renderMainGrid();playClickSound();toast(wasIn?'Watch Later থেকে সরানো':'✅ Watch Later-এ যোগ!');}
 function toggleSave(){if(curVid)toggleWL(curVid.key,null);}
-function shareVid(){if(!curVid)return;navigator.share?.({title:curVid.title,url:APP_LINK}).catch(()=>{});toast('শেয়ার করা হয়েছে!');}
+function shareVid(){
+  if(!curVid)return;
+  const key=curVid.key;
+  const title=curVid.title||'Movie Lover';
+  const shareUrl=`${APP_LINK}?startapp=video_${key}`;
+
+  // Native share (mobile)
+  if(navigator.share){
+    navigator.share({
+      title:title,
+      text:`🎬 "${title}" দেখুন Movie Lover-এ!`,
+      url:shareUrl
+    }).catch(()=>{});
+    return;
+  }
+
+  // Fallback: copy to clipboard
+  navigator.clipboard?.writeText(shareUrl).then(()=>{
+    toast('✅ ভিডিও লিংক কপি হয়েছে!');
+  }).catch(()=>{
+    // Last fallback
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=shareUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('✅ ভিডিও লিংক কপি হয়েছে!');
+    }catch(e){
+      toast('লিংক: '+shareUrl);
+    }
+  });
+}
 
 // ════════════════════════════════════════════════════════════
 //  VOICE SEARCH
@@ -1806,8 +2038,71 @@ function doSearch(q){const sp=document.getElementById('searchPage'),hp=document.
 function renderPkgsList(){const list=document.getElementById('pkgListEl');const arr=Object.entries(pkgs);if(!arr.length){list.innerHTML='<div style="text-align:center;color:var(--t3);padding:18px">কোনো প্যাকেজ নেই</div>';return;}list.innerHTML=arr.map(([key,p],i)=>`<div class="pkg-card ${i===0?'sel':''}" onclick="doSelPkg('${key}',this)">${i===0?'<div class="pkg-pop">জনপ্রিয়</div>':''}<div class="pkg-name">${p.name}</div><div class="pkg-price">${p.price} ৳</div><div style="font-size:10px;color:var(--t3)">${p.duration||'১ মাস'}</div><div class="pkg-feats"><div class="pkg-feat"><i class="fa fa-check"></i> বিজ্ঞাপন মুক্ত</div><div class="pkg-feat"><i class="fa fa-check"></i> HD কোয়ালিটি</div>${p.desc?`<div class="pkg-feat"><i class="fa fa-check"></i> ${p.desc}</div>`:''}</div></div>`).join('');if(arr.length)doSelPkg(arr[0][0],null);}
 function doSelPkg(key,el){selPkgKey=key;document.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('sel'));if(el)el.classList.add('sel');const pb=document.getElementById('payBox');pb.style.display='block';const d=cfg;const meths=[{l:'bKash',k:'bkash',n:d.bkashNum},{l:'Nagad',k:'nagad',n:d.nagadNum},{l:'Rocket',k:'rocket',n:d.rocketNum}].filter(m=>m.n);pb.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:9px">💳 এই নম্বরে পেমেন্ট করুন:</div>`+meths.map(m=>{const logoUrl=payLogos[m.k];return`<div class="pay-row"><div style="display:flex;align-items:center">${logoUrl?`<img src="${logoUrl}" class="pay-method-logo">`:''}<span style="font-size:11px;font-weight:700">${m.l}</span></div><div class="pay-num">${m.n}</div></div>`;}).join('');if(d.pmNote)document.getElementById('pmNoteEl').innerText=d.pmNote;document.getElementById('txnInp').style.display='block';document.getElementById('premSubmitBtn').style.display='block';}
 function submitPrem(){const txn=document.getElementById('txnInp').value.trim();if(!txn){toast('Transaction ID দিন!');return;}const pk=pkgs[selPkgKey];const uid=curUser?curUser.uid:tgUser?'tg_'+tgUser.id:'guest_'+Date.now();db.ref('subRequests').push({userId:uid,package:pk?.name,txnId:txn,amount:pk?.price,status:'pending',ts:Date.now()});playClickSound();toast('✅ রিকুয়েস্ট পাঠানো হয়েছে!');closePremModal();}
-function openPremModal(){renderPkgsList();document.getElementById('premModal').classList.add('show');}
-function closePremModal(){document.getElementById('premModal').classList.remove('show');}
+// ── VIRAL VIDEO PREMIUM POPUP ──
+function openViralPremModal(){
+  const list=document.getElementById('viralPkgList');
+  const arr=Object.entries(pkgs);
+  if(!arr.length){
+    list.innerHTML='<div style="text-align:center;color:var(--t3);padding:14px">কোনো প্যাকেজ নেই</div>';
+  } else {
+    list.innerHTML=arr.map(([key,p],i)=>`
+      <div class="pkg-card ${i===0?'sel':''}" onclick="doSelViralPkg('${key}',this)" style="margin-bottom:9px">
+        ${i===0?'<div class="pkg-pop">জনপ্রিয়</div>':''}
+        <div class="pkg-name">${p.name}</div>
+        <div class="pkg-price">${p.price} ৳</div>
+        <div style="font-size:10px;color:var(--t3)">${p.duration||'১ মাস'}</div>
+        <div class="pkg-feats">
+          <div class="pkg-feat"><i class="fa fa-check"></i> বিজ্ঞাপন মুক্ত</div>
+          <div class="pkg-feat"><i class="fa fa-check"></i> HD কোয়ালিটি</div>
+          ${p.desc?`<div class="pkg-feat"><i class="fa fa-check"></i> ${p.desc}</div>`:''}
+        </div>
+      </div>`).join('');
+    if(arr.length) doSelViralPkg(arr[0][0],null);
+  }
+  document.getElementById('viralPremPopup').classList.add('show');
+}
+
+function closeViralPrem(){
+  document.getElementById('viralPremPopup').classList.remove('show');
+}
+
+function doSelViralPkg(key,el){
+  selPkgKey=key;
+  document.querySelectorAll('#viralPkgList .pkg-card').forEach(c=>c.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  const pb=document.getElementById('viralPayBox');
+  pb.style.display='block';
+  const d=cfg;
+  const meths=[{l:'bKash',k:'bkash',n:d.bkashNum},{l:'Nagad',k:'nagad',n:d.nagadNum},{l:'Rocket',k:'rocket',n:d.rocketNum}].filter(m=>m.n);
+  pb.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:9px">💳 এই নম্বরে পেমেন্ট করুন:</div>`
+    +meths.map(m=>{
+      const logoUrl=payLogos[m.k];
+      return`<div class="pay-row">
+        <div style="display:flex;align-items:center">
+          ${logoUrl?`<img src="${logoUrl}" class="pay-method-logo">`:''}
+          <span style="font-size:11px;font-weight:700">${m.l}</span>
+        </div>
+        <div class="pay-num">${m.n}</div>
+      </div>`;
+    }).join('');
+  if(d.pmNote) document.getElementById('viralPmNote').innerText=d.pmNote;
+  document.getElementById('viralTxnInp').style.display='block';
+  document.getElementById('viralSubmitBtn').style.display='block';
+}
+
+function submitViralPrem(){
+  const txn=document.getElementById('viralTxnInp').value.trim();
+  if(!txn){toast('Transaction ID দিন!');return;}
+  const pk=pkgs[selPkgKey];
+  const uid=curUser?curUser.uid:tgUser?'tg_'+tgUser.id:'guest_'+Date.now();
+  db.ref('subRequests').push({userId:uid,package:pk?.name,txnId:txn,amount:pk?.price,status:'pending',ts:Date.now()});
+  playClickSound();
+  toast('✅ রিকুয়েস্ট পাঠানো হয়েছে!');
+  closeViralPrem();
+}
+
+function openPremModal(){openViralPremModal();}
+function closePremModal(){closeViralPrem();}
 function updatePremUI(){if(isPrem){document.getElementById('adBanTop').style.display='none';document.getElementById('adBanMid').style.display='none';}const pb=document.getElementById('premBadgeHero');if(pb)pb.style.display=isPrem?'flex':'none';}
 
 // ════════════════════════════════════════════════════════════
@@ -1866,8 +2161,24 @@ let _tt;function toast(msg){const t=document.getElementById('toast');t.innerText
 // ════════════════════════════════════════════════════════════
 //  STARTUP
 // ════════════════════════════════════════════════════════════
+// ── Deep Link Handler — video_KEY দিয়ে সরাসরি ভিডিও ওপেন ──
+function handleDeepLink(){
+  const ref=getTgRefId();
+  if(ref&&ref.startsWith('video_')){
+    const vidKey=ref.replace('video_','');
+    // vids লোড হওয়ার পর open করব
+    const tryOpen=()=>{
+      const v=vids.find(x=>x.key===vidKey);
+      if(v){playVid(vidKey);}
+      else{setTimeout(tryOpen,500);}
+    };
+    setTimeout(tryOpen,2600); // loader শেষ হওয়ার পর
+  }
+}
+
 const st=localStorage.getItem('theme')||'dark';isDark=st==='dark';document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
 init();
+handleDeepLink();
 </script>
 </body>
 </html>
