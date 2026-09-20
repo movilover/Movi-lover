@@ -164,6 +164,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 .pm-act.liked{color:var(--red)}.pm-act.saved{color:var(--gold)}
 .vframe{width:100%;background:#000;position:relative;padding-top:56.25%}
 .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2}
+.vframe video.direct-video{position:absolute;inset:0;width:100%;height:100%;z-index:2;background:#000;object-fit:contain;outline:none}
 
 /* PLAYER FRAME LOADING / ERROR STATE */
 .player-frame-status{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#000;text-align:center;padding:16px}
@@ -1171,14 +1172,60 @@ function setFrameStatus(which,mode,msg){
     if(txtEl)txtEl.innerHTML=`<i class="fa fa-triangle-exclamation pfs-err-icon" style="display:block;margin-bottom:8px"></i>${msg||'এই ভিডিওটি এখন পাওয়া যাচ্ছে না, একটু পরে চেষ্টা করুন'}`;
   }
 }
+// ── সরাসরি ভিডিও ফাইল (Cloudinary .mp4 ইত্যাদি) হলে আসল <video> প্লেয়ার, না হলে আগের মতো iframe ──
+function isDirectVideoUrl(u){
+  if(!u)return false;
+  return /\.(mp4|m4v|webm|ogv|mov)(\?[^#]*)?(#.*)?$/i.test(u)||/res\.cloudinary\.com\/[^\/]+\/video\/upload\//i.test(u);
+}
+function getDirectVideoEl(iframeEl,create){
+  const id=iframeEl.id+'_vid';let v=document.getElementById(id);
+  if(!v&&create&&iframeEl.parentNode){
+    v=document.createElement('video');v.id=id;v.className='direct-video';
+    v.controls=true;v.preload='metadata';
+    v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
+    v.setAttribute('controlsList','nodownload');
+    v.style.display='none';
+    iframeEl.parentNode.insertBefore(v,iframeEl.nextSibling);
+  }
+  return v;
+}
+function stopDirectVideo(iframeEl){   // ভিডিও থামানো + মেমরি/নেটওয়ার্ক মুক্ত করা
+  const v=iframeEl&&getDirectVideoEl(iframeEl,false);
+  if(!v)return;
+  clearTimeout(v._failTimer);
+  v.onloadeddata=v.oncanplay=v.onerror=null;
+  try{v.pause();}catch(e){}
+  v.removeAttribute('src');try{v.load();}catch(e){}
+  v.style.display='none';
+}
+function playDirectVideo(iframeEl,which,url){
+  const v=getDirectVideoEl(iframeEl,true);
+  clearTimeout(v._failTimer);
+  iframeEl.onload=null;iframeEl.onerror=null;
+  iframeEl.src='about:blank';iframeEl.style.display='none';
+  setFrameStatus(which,'loading','ভিডিও লোড হচ্ছে...');
+  const done=()=>{clearTimeout(v._failTimer);setFrameStatus(which,'hide');};
+  v.onloadeddata=done;v.oncanplay=done;
+  v.onerror=()=>{clearTimeout(v._failTimer);setFrameStatus(which,'error','এই ভিডিওটি চালানো যাচ্ছে না — লিংক নষ্ট বা ফরম্যাট সমর্থিত নয়');};
+  v._failTimer=setTimeout(()=>{setFrameStatus(which,'error','ভিডিও লোড হতে দেরি হচ্ছে — ইন্টারনেট দেখে আবার চেষ্টা করুন');},25000);
+  const thumb=(typeof curVid!=='undefined'&&curVid&&curVid.thumb)||'';
+  if(thumb)v.poster=thumb;else v.removeAttribute('poster');
+  v.style.display='block';
+  v.src=url;
+  try{v.load();}catch(e){}
+  try{const p=v.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}   // অটোপ্লে ব্লক হলে ইউজার প্লে চাপবে
+}
 function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   if(!iframeEl)return;
   iframeEl.onload=null;iframeEl.onerror=null;
   if(!embedUrl){
+    stopDirectVideo(iframeEl);iframeEl.style.display='';
     iframeEl.src='about:blank';
     setFrameStatus(which,'error','এই ভিডিওটি এখন পাওয়া যাচ্ছে না, একটু পরে চেষ্টা করুন');
     return;
   }
+  if(isDirectVideoUrl(embedUrl)){playDirectVideo(iframeEl,which,embedUrl);return;}
+  stopDirectVideo(iframeEl);iframeEl.style.display='';
   setFrameStatus(which,'loading','ভিডিও লোড হচ্ছে...');
   let settled=false;
   const failTimer=setTimeout(()=>{ if(!settled){ settled=true; setFrameStatus(which,'error','ভিডিও লোড হতে দেরি হচ্ছে — একটু পরে আবার চেষ্টা করুন'); } },12000);
@@ -1195,7 +1242,8 @@ function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   requestAnimationFrame(()=>{ iframeEl.src=embedUrl; });
 }
 function togglePlayerFullscreen(iframeId){
-  const el=document.getElementById(iframeId);
+  const dv=document.getElementById(iframeId+'_vid');
+  const el=(dv&&dv.style.display!=='none')?dv:document.getElementById(iframeId);
   if(!el)return;
   try{
     if(el.requestFullscreen)el.requestFullscreen();
@@ -1669,6 +1717,7 @@ function closePlayer(fromPopstate){
   const iframe=document.getElementById('viframe');
   iframe.onload=null;iframe.onerror=null;
   iframe.src='about:blank'; // ব্যাকগ্রাউন্ডে ভিডিও/অডিও চলতে থাকা বন্ধ করার জন্য বাধ্যতামূলক
+  stopDirectVideo(iframe);
   setFrameStatus('v','hide');
   document.body.style.overflow='';
   curVid=null;
@@ -1980,6 +2029,7 @@ function closeSeriesPage(fromPopstate){
   const iframe=document.getElementById('spIframe');
   iframe.onload=null;iframe.onerror=null;
   iframe.src='about:blank';
+  stopDirectVideo(iframe);
   setFrameStatus('sp','hide');
   document.body.style.overflow='';
   curSeriesCat=null;curSeriesVidKey=null;seriesPendingAfterUnlock=null;
