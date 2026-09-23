@@ -723,6 +723,43 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
 
 [data-theme="light"] .verify-box{background:#fff !important;border-color:#ddd !important}
 [data-theme="light"] .verify-site-name{color:#111 !important}
+
+/* ════════════════════════════════════════════════════════
+   ★ NEW: UNLOCK PAGE — টাস্ক-লিস্ট স্টাইল (স্ক্রিনশট অনুযায়ী)
+   ════════════════════════════════════════════════════════ */
+#unlockPage{position:fixed;inset:0;z-index:5000;background:var(--bg);display:none;overflow-y:auto;padding:14px 12px 40px}
+#unlockPage.show{display:block}
+.up-wrap{max-width:480px;margin:0 auto}
+.up-back{background:var(--bg2);border:1px solid var(--border);color:var(--t1);font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;padding:9px 18px;border-radius:20px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px}
+.up-thumb{width:100%;border-radius:14px;border:2px solid var(--red);display:block;margin-bottom:14px;aspect-ratio:16/9;object-fit:cover;background:var(--bg3)}
+.up-title{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:center;font-weight:800;font-size:13.5px;color:var(--t1);margin-bottom:14px}
+.up-lockmsg{background:rgba(229,72,77,.08);border-left:3px solid var(--red);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--t1);line-height:1.7;margin-bottom:14px}
+.up-lockmsg i{color:var(--red);margin-right:5px}
+.up-tasks{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.up-task-row{border:1px solid var(--border2);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2)}
+.up-task-row.done{border-color:var(--green)}
+.up-task-left{display:flex;align-items:center;gap:10px}
+.up-task-check{width:22px;height:22px;border-radius:50%;background:var(--bg4);color:var(--t3);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.up-task-row.done .up-task-check{background:var(--green);color:#fff}
+.up-task-name{font-weight:800;font-size:13px;color:var(--t1)}
+.up-task-sub{font-size:10px;color:var(--t3);margin-top:2px}
+.up-task-btn{padding:9px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-family:'Poppins',sans-serif;font-weight:800;font-size:11.5px;cursor:pointer;min-width:78px;text-align:center}
+.up-task-btn.completed{background:var(--green);cursor:default}
+.up-task-btn.waiting{background:var(--gold);color:#000}
+.up-dlbtn{width:100%;padding:15px;border-radius:10px;border:none;background:var(--green);color:#fff;font-family:'Poppins',sans-serif;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;opacity:.5}
+.up-dlbtn:not(:disabled){opacity:1}
+.up-dlbtn:disabled{cursor:not-allowed}
+
+/* verification-failed popup — সম্পূর্ণ সময় অপেক্ষা না করে ফিরে এলে */
+#verify-fail-modal{position:fixed;inset:0;z-index:5400;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px}
+#verify-fail-modal.show{display:flex}
+.vf-box{width:100%;max-width:320px;background:#fff;border-radius:16px;padding:28px 22px 24px;text-align:center;animation:tcpPop .25s ease}
+.vf-x{width:52px;height:52px;border-radius:50%;background:var(--red);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.vf-title{font-size:16px;font-weight:900;color:#111;margin-bottom:10px}
+.vf-msg{font-size:12.5px;color:#444;line-height:1.8;margin-bottom:18px}
+.vf-msg b{color:var(--red)}
+.vf-btn{width:100%;padding:13px;border-radius:9px;border:none;background:#111;color:#fff;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+[data-theme="light"] .vf-box{background:#fff}
 [data-theme="light"] .verify-title{color:#111 !important}
 [data-theme="light"] .yt-title{color:#111 !important}
 [data-theme="light"] .series-name{color:#111 !important}
@@ -902,27 +939,28 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--t1);min-h
   </div>
 </div>
 
-<!-- ৩-ধাপ AD VERIFY MODAL (কাজ ৩) -->
-<div id="verify-modal">
-  <div class="verify-box">
-    <div class="verify-close-btn" id="verifyCloseBtn" onclick="closeVerifyModal()"><i class="fa fa-times"></i></div>
-    <div class="verify-site-name" id="verifySiteName">MOVIE<span>LOVER</span></div>
-    <div class="verify-dots" id="verifyDots"></div>
-    <div class="verify-ring-box">
-      <svg viewBox="0 0 104 104">
-        <circle class="ring-bg" cx="52" cy="52" r="45"></circle>
-        <circle class="ring-fg" id="verifyRingFg" cx="52" cy="52" r="45"></circle>
-      </svg>
-      <div class="verify-ring-icon" id="verifyRingIcon"><i class="fa fa-film"></i></div>
-    </div>
-    <div class="verify-title" id="verifyTitle">বিজ্ঞাপন দেখা হচ্ছে...</div>
-    <div class="verify-sub" id="verifySub">অনুগ্রহ করে অপেক্ষা করুন</div>
-    <div class="verify-timer-text" id="verifyTimerText"></div>
-    <button class="verify-link-btn" id="verifyLinkBtn" style="display:none" onclick="openDirectLinkStep()"><i class="fa fa-external-link-alt"></i> <span id="verifyLinkBtnTxt">লিংক ওপেন করুন</span></button>
-    <div class="verify-slot" id="verifyAdSlot"></div>
-    <div class="verify-hint" id="verifyHint">বিজ্ঞাপন সম্পূর্ণ দেখলে পরবর্তী ধাপ আনলক হবে</div>
+<!-- ★ NEW: টাস্ক-লিস্ট স্টাইল আনলক পেজ (স্ক্রিনশট অনুযায়ী) ★ -->
+<div id="unlockPage">
+  <div class="up-wrap">
+    <button class="up-back" onclick="closeUnlockPage()"><i class="fa fa-arrow-left"></i> Back</button>
+    <img class="up-thumb" id="upThumb" src="">
+    <div class="up-title" id="upTitle"></div>
+    <div class="up-lockmsg" id="upLockMsg"></div>
+    <div class="up-tasks" id="upTasks"></div>
+    <button class="up-dlbtn" id="upDlBtn" disabled onclick="onUnlockPagePlayClick()"><i class="fa fa-download"></i> <span id="upDlBtnTxt">ডাউনলোড ভিডিও</span></button>
   </div>
 </div>
+
+<!-- ★ NEW: ভেরিফিকেশন ব্যর্থ পপআপ (সম্পূর্ণ সময় অপেক্ষা না করলে) ★ -->
+<div id="verify-fail-modal">
+  <div class="vf-box">
+    <div class="vf-x"><i class="fa fa-times"></i></div>
+    <div class="vf-title">ভেরিফিকেশন ব্যর্থ!</div>
+    <div class="vf-msg" id="vfMsg"></div>
+    <button class="vf-btn" onclick="closeVerifyFailPopup()">বুঝতে পেরেছি</button>
+  </div>
+</div>
+
 
 <!-- TASK COMPLETE CELEBRATION POPUP -->
 <div id="task-complete-popup">
@@ -1230,6 +1268,24 @@ function playDirectVideo(iframeEl,which,url){
 function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   if(!iframeEl)return;
   iframeEl.onload=null;iframeEl.onerror=null;
+  // ★ FAILOVER: Cloudinary বন্ধ থাকলে (Admin Panel থেকে গ্লোবাল মোড 'telegram' করা থাকলে)
+  // এবং এই ভিডিওর জন্য Telegram লিংক থাকলে — ইনলাইন প্লেয়ারের বদলে "Watch Now" বাটন দেখানো হয়,
+  // যেটাতে ক্লিক করলে Telegram-এ ভিডিওটা ওপেন হয়।
+  if(cfg.videoDelivery?.mode==='telegram'&&curVid&&curVid.telegramLink){
+    stopDirectVideo(iframeEl);iframeEl.style.display='none';
+    const holder=iframeEl.parentNode;
+    let btn=document.getElementById(iframeEl.id+'_tgbtn');
+    if(!btn&&holder){
+      btn=document.createElement('div');btn.id=iframeEl.id+'_tgbtn';
+      btn.style.cssText='width:100%;height:100%;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#000;color:#fff;cursor:pointer';
+      btn.innerHTML='<i class="fa fa-paper-plane" style="font-size:34px;color:#29a9eb"></i><div style="font-weight:800;font-size:14px">Watch Now (Telegram)</div><div style="font-size:10px;color:#888">ভিডিওটি Telegram-এ ওপেন হবে</div>';
+      btn.onclick=()=>window.open(curVid.telegramLink,'_blank');
+      holder.insertBefore(btn,iframeEl.nextSibling);
+    }
+    if(btn)btn.style.display='flex';
+    setFrameStatus(which,'hide');
+    return;
+  }else{const oldBtn=document.getElementById(iframeEl.id+'_tgbtn');if(oldBtn)oldBtn.style.display='none';}
   if(!embedUrl){
     stopDirectVideo(iframeEl);iframeEl.style.display='';
     iframeEl.src='about:blank';
@@ -1551,7 +1607,7 @@ function renderUnlockProgressRow(v){
   for(let i=0;i<req;i++)dots+=`<div class="unlock-dot ${i<step?'done':''}"></div>`;
   return`<div class="unlock-progress-row">${dots}</div><button class="unlock-watch-btn" onclick="event.stopPropagation();runAdStep('${v.key}')"><i class="fa fa-play"></i> ${btnLabel} (${step}/${req})</button>`;
 }
-function renderMainGrid(filter=null){const data=filter?vids.filter(v=>v.category===filter):vids;document.getElementById('mainGrid').innerHTML=data.length?data.map(v=>card(v)).join(''):`<div class="empty" style="grid-column:1/-1"><i class="fa fa-film"></i><p>কোনো ভিডিও নেই</p></div>`;}
+function renderMainGrid(filter=null){const data=filter?vids.filter(v=>v.category===filter):vids.filter(v=>v.showOnHome!==false);document.getElementById('mainGrid').innerHTML=data.length?data.map(v=>card(v)).join(''):`<div class="empty" style="grid-column:1/-1"><i class="fa fa-film"></i><p>কোনো ভিডিও নেই</p></div>`;}
 function videoNeedsAds(v){return !isPrem&&cfg.adUnlockConfig&&cfg.adUnlockConfig.enabled&&!isVideoUnlocked(v.key);}
 function card(v){
   const s=wl.includes(v.key);
@@ -1872,55 +1928,12 @@ async function injectAdNetworkScript(netKey,zoneId){
   setTimeout(()=>triggerNetworkAd(netKey,zoneId),300);
 }
 
-function resetAdModalToPlayingState(){
-  const ring=document.getElementById('verifyRingFg');const ic=document.getElementById('verifyRingIcon');
-  document.getElementById('verifyLinkBtn').style.display='none';
-  ring.classList.remove('done');ring.classList.add('spinning');
-  ic.classList.remove('done');ic.innerHTML='<i class="fa fa-film"></i>';
-  document.getElementById('verifyCloseBtn').classList.remove('show');
-  document.getElementById('verifyTitle').innerText='বিজ্ঞাপন দেখা হচ্ছে...';
-  document.getElementById('verifySub').innerText='অনুগ্রহ করে অপেক্ষা করুন, বিজ্ঞাপন বন্ধ করবেন না';
-  document.getElementById('verifyTimerText').innerText='';
-}
+function resetAdModalToPlayingState(){} // ★ deprecated (task-list UI ব্যবহার হচ্ছে এখন), পুরনো কোড-কল যাতে ভেঙে না যায় তাই খালি রাখা হলো
+function resetVerifyModalForLinkStep(idx){} // ★ deprecated, একই কারণ
 
-// ── Direct-link mode: show a button, user taps it → link opens → wait timer → done ──
-function resetVerifyModalForLinkStep(idx){
-  const ring=document.getElementById('verifyRingFg');const ic=document.getElementById('verifyRingIcon');
-  ring.classList.remove('done','spinning');
-  ic.classList.remove('done');ic.innerHTML='<i class="fa fa-link"></i>';
-  document.getElementById('verifyCloseBtn').classList.remove('show');
-  document.getElementById('verifyTitle').innerText='লিংকে যান ও অপেক্ষা করুন';
-  document.getElementById('verifySub').innerText='নিচের বাটনে ট্যাপ করে লিংক ওপেন করুন, তারপর এই পেজে ফিরে আসুন';
-  document.getElementById('verifyTimerText').innerText='';
-  document.getElementById('verifyAdSlot').innerHTML='';
-  const btn=document.getElementById('verifyLinkBtn');
-  btn.style.display='flex';
-  document.getElementById('verifyLinkBtnTxt').innerText=`লিংক ওপেন করুন (ধাপ ${idx+1}/${VSTATE.required})`;
-}
-
-function openDirectLinkStep(){
-  if(!VSTATE.active||VSTATE.mode!=='direct')return;
-  const linkObj=VSTATE.directLinks[VSTATE.step];
-  if(!linkObj||!linkObj.url){toast('❌ এই ধাপের লিংক পাওয়া যায়নি — অ্যাডমিনকে জানান');return;}
-  window.open(linkObj.url,'_blank');
-  VSTATE.awaitingReturn=true;
-  document.getElementById('verifyLinkBtn').style.display='none';
-  document.getElementById('verifyTitle').innerText='অপেক্ষা করা হচ্ছে...';
-  document.getElementById('verifySub').innerText='লিংক থেকে ফিরে আসার পর এখানেই অপেক্ষা করুন';
-  const ring=document.getElementById('verifyRingFg');const ic=document.getElementById('verifyRingIcon');
-  ring.classList.add('spinning');ic.innerHTML='<i class="fa fa-hourglass-half"></i>';
-  const waitSec=parseInt(linkObj.waitSec||5,10);
-  let remaining=waitSec;
-  const tEl=()=>document.getElementById('verifyTimerText');
-  if(tEl())tEl().innerText=remaining+' সেকেন্ড অপেক্ষা করুন...';
-  clearInterval(VSTATE.adTimerId);
-  VSTATE.adTimerId=setInterval(()=>{
-    remaining--;
-    if(tEl())tEl().innerText=remaining>0?(remaining+' সেকেন্ড অপেক্ষা করুন...'):'';
-    if(remaining<=0){clearInterval(VSTATE.adTimerId);VSTATE.awaitingReturn=false;runVerifySequence();}
-  },1000);
-}
-
+// ════════════════════════════════════════════════════════════
+//  ★ NEW: TASK-LIST স্টাইল আনলক পেজ (স্ক্রিনশট অনুযায়ী রিডিজাইন) ★
+// ════════════════════════════════════════════════════════════
 function runAdStep(vidKey){
   if(uBanned){showBanModal();return;}
   const v=vids.find(x=>x.key===vidKey);if(!v)return;
@@ -1929,108 +1942,116 @@ function runAdStep(vidKey){
   VSTATE.required=adsReq(v);
   VSTATE.step=getTaskStep(vidKey);
   if(VSTATE.step>=VSTATE.required){finishUnlock(vidKey);return;}
-  VSTATE.active=true;VSTATE.vidKey=vidKey;VSTATE.leftEarly=false;VSTATE.awaitingReturn=false;
+  VSTATE.active=true;VSTATE.vidKey=vidKey;
   VSTATE.mode=(v.adMode==='direct')?'direct':'network';
   VSTATE.directLinks=v.directLinks||[];
   VSTATE.videoNetworkOverride=v.networkOverride||null;
+  openUnlockPage(v);
+}
 
-  const siteName=cfg.siteName||'Movie Lover';
-  document.getElementById('verifySiteName').innerHTML=siteName.replace(/(lover)/i,'<span>$1</span>');
-  renderVerifyDots();
-  document.getElementById('verify-modal').classList.add('show');
+function openUnlockPage(v){
+  document.getElementById('upThumb').src=v.thumb||'';
+  document.getElementById('upTitle').innerText=v.title||'';
+  const modeTxt=VSTATE.mode==='direct'?'নিচের '+VSTATE.required+'টা লিংক ওপেন করুন':'নিচের '+VSTATE.required+'টা এড দেখে নিন';
+  document.getElementById('upLockMsg').innerHTML=`<i class="fa fa-lock"></i> ভিডিওটি আনলক করার জন্য ${modeTxt}।`;
+  document.getElementById('unlockPage').classList.add('show');
   document.body.style.overflow='hidden';
-
-  if(VSTATE.mode==='direct'){
-    resetVerifyModalForLinkStep(VSTATE.step);
-    return;
+  renderUnlockTasks();
+}
+function closeUnlockPage(){
+  clearUnlockTaskTimer();
+  document.getElementById('unlockPage').classList.remove('show');
+  document.body.style.overflow='';
+  VSTATE.active=false;VSTATE.vidKey=null;
+}
+function renderUnlockTasks(){
+  const wrap=document.getElementById('upTasks');if(!wrap)return;
+  const step=getTaskStep(VSTATE.vidKey);
+  let html='';
+  for(let i=0;i<VSTATE.required;i++){
+    const done=i<step;
+    const isCur=i===step;
+    let btnHtml;
+    if(done)btnHtml=`<button class="up-task-btn completed">COMPLETED</button>`;
+    else if(isCur)btnHtml=`<button class="up-task-btn" id="upTaskBtn${i}" onclick="startUnlockTask(${i})">VISIT</button>`;
+    else btnHtml=`<button class="up-task-btn" style="background:var(--bg4);color:var(--t3);cursor:not-allowed" disabled>VISIT</button>`;
+    const subTxt=VSTATE.mode==='direct'?'লিংক ভিজিট করে অপেক্ষা করুন':`${(VSTATE.videoNetworkOverride&&VSTATE.videoNetworkOverride.adTimer)||cfg.adUnlockConfig?.adTimer||15} সেকেন্ড অপেক্ষা করুন`;
+    html+=`<div class="up-task-row ${done?'done':''}"><div class="up-task-left"><div class="up-task-check">${done?'<i class="fa fa-check"></i>':(i+1)}</div><div><div class="up-task-name">Task ${i+1}</div><div class="up-task-sub">${subTxt}</div></div></div>${btnHtml}</div>`;
   }
+  wrap.innerHTML=html;
+  const dlBtn=document.getElementById('upDlBtn');
+  if(step>=VSTATE.required){dlBtn.disabled=false;document.getElementById('upDlBtnTxt').innerText='ভিডিওটি দেখুন';}
+  else{dlBtn.disabled=true;document.getElementById('upDlBtnTxt').innerText='ডাউনলোড ভিডিও';}
+}
+function onUnlockPagePlayClick(){
+  const key=VSTATE.vidKey;if(!key)return;
+  if(getTaskStep(key)>=VSTATE.required)finishUnlock(key);
+}
 
-  resetAdModalToPlayingState();
+// একটা টাস্ক শুরু করা — নেটওয়ার্ক অ্যাড বা ডাইরেক্ট লিংক, দুইটাতেই আসল সময় (wall-clock) মাপা হয়
+let UTASK={active:false,taskIndex:-1,requiredSec:15,startTime:0};
+function clearUnlockTaskTimer(){UTASK.active=false;}
+function startUnlockTask(i){
+  const key=VSTATE.vidKey;if(!key)return;
+  if(i!==getTaskStep(key))return;
   const cfgU=cfg.adUnlockConfig||{};
   const ov=VSTATE.videoNetworkOverride||{};
-  const netKey=ov.network||cfgU.network||'monetag';
-  const zoneId=ov.networkAppId||cfgU.networkAppId||'';
-  const timerSec=parseInt(ov.adTimer||cfgU.adTimer||15,10);
-  VSTATE.netKey=netKey;
-  injectAdNetworkScript(netKey,zoneId);
-
-  let remaining=timerSec;
-  const tEl=()=>document.getElementById('verifyTimerText');
-  if(tEl())tEl().innerText=remaining+' সেকেন্ড অপেক্ষা করুন...';
-  clearInterval(VSTATE.adTimerId);
-  VSTATE.adTimerId=setInterval(()=>{
-    remaining--;
-    if(tEl())tEl().innerText=remaining>0?(remaining+' সেকেন্ড অপেক্ষা করুন...'):'';
-    if(remaining<=0){clearInterval(VSTATE.adTimerId);runVerifySequence();}
-  },1000);
+  if(VSTATE.mode==='direct'){
+    const linkObj=VSTATE.directLinks[i];
+    if(!linkObj||!linkObj.url){toast('❌ এই ধাপের লিংক পাওয়া যায়নি — অ্যাডমিনকে জানান');return;}
+    window.open(linkObj.url,'_blank');
+    UTASK={active:true,taskIndex:i,requiredSec:parseInt(linkObj.waitSec||5,10),startTime:Date.now()};
+  }else{
+    const netKey=ov.network||cfgU.network||'monetag';
+    const zoneId=ov.networkAppId||cfgU.networkAppId||'';
+    const timerSec=parseInt(ov.adTimer||cfgU.adTimer||15,10);
+    injectAdNetworkScript(netKey,zoneId);
+    UTASK={active:true,taskIndex:i,requiredSec:timerSec,startTime:Date.now()};
+  }
+  const btn=document.getElementById('upTaskBtn'+i);
+  if(btn){btn.classList.add('waiting');btn.disabled=true;}
+  tickUnlockTaskBtn(i);
 }
-
-function runVerifySequence(){
-  const titleEl=document.getElementById('verifyTitle');const subEl=document.getElementById('verifySub');const tEl=document.getElementById('verifyTimerText');
-  if(!titleEl)return;
-  titleEl.innerText='যাচাই করা হচ্ছে...';
-  subEl.innerText='২ সেকেন্ড অপেক্ষা করুন...';
-  let sec=2;
-  if(tEl)tEl.innerText=sec+' সেকেন্ড অপেক্ষা করুন...';
-  clearInterval(VSTATE.verifyTimerId);
-  VSTATE.verifyTimerId=setInterval(()=>{
-    sec--;
-    if(sec>0){if(tEl)tEl.innerText=sec+' সেকেন্ড অপেক্ষা করুন...';}
-    else{
-      clearInterval(VSTATE.verifyTimerId);
-      const ring=document.getElementById('verifyRingFg');const ic=document.getElementById('verifyRingIcon');
-      ring.classList.remove('spinning');ring.classList.add('done');
-      ic.classList.add('done');ic.innerHTML='<i class="fa fa-check"></i>';
-      document.getElementById('verifyTitle').innerText='সম্পন্ন হয়েছে!';
-      document.getElementById('verifySub').innerText='ধাপটি সম্পন্ন হয়েছে';
-      if(tEl)tEl.innerText='';
-      document.getElementById('verifyCloseBtn').classList.add('show');
-      _beep(880,.15,.2);
-    }
-  },1000);
+function tickUnlockTaskBtn(i){
+  if(!UTASK.active||UTASK.taskIndex!==i)return;
+  const btn=document.getElementById('upTaskBtn'+i);
+  const remain=Math.max(0,UTASK.requiredSec-Math.floor((Date.now()-UTASK.startTime)/1000));
+  if(btn)btn.innerText=remain>0?(remain+'s'):'...';
+  if(remain<=0){completeUnlockTask(i);return;}
+  setTimeout(()=>tickUnlockTaskBtn(i),300);
 }
-
-function closeVerifyModal(){
-  if(!VSTATE.active)return;
-  const closeBtn=document.getElementById('verifyCloseBtn');
-  const stepCompleted=closeBtn.classList.contains('show');
-  document.getElementById('verify-modal').classList.remove('show');
-  document.body.style.overflow='';
-  clearInterval(VSTATE.adTimerId);clearInterval(VSTATE.verifyTimerId);
-  VSTATE.active=false;VSTATE.awaitingReturn=false;
-  if(stepCompleted)onSingleAdWatched();
-  else VSTATE.vidKey=null;
-}
-
-function onSingleAdWatched(){
-  const key=VSTATE.vidKey;
-  if(!key)return;
+function completeUnlockTask(i){
+  if(!UTASK.active||UTASK.taskIndex!==i)return;
+  UTASK.active=false;
+  const key=VSTATE.vidKey;if(!key)return;
   const step=getTaskStep(key)+1;
   setTaskStep(key,step);
-  VSTATE.vidKey=null;
+  renderUnlockTasks();
+  renderMainGrid();renderCatSecs();
+  if(document.getElementById('seriesPage')?.classList.contains('show')&&curSeriesCat)renderSeriesEpisodeList();
   if(step>=VSTATE.required){
-    finishUnlock(key);
-  } else {
-    const mode=VSTATE.mode;
-    toast(mode==='direct'?`✅ ধাপ ${step}/${VSTATE.required} সম্পন্ন — পরের লিংকের জন্য আবার ট্যাপ করুন`:`✅ ধাপ ${step}/${VSTATE.required} সম্পন্ন — পরের বিজ্ঞাপনের জন্য আবার ট্যাপ করুন`);
-    renderMainGrid();renderCatSecs();
-    if(document.getElementById('seriesPage').classList.contains('show')&&curSeriesCat)renderSeriesEpisodeList();
+    setTimeout(()=>{closeUnlockPage();finishUnlock(key);},400);
   }
 }
-
-// অ্যাড মাঝপথে বন্ধ করলে (ট্যাব সুইচ / অ্যাপ মিনিমাইজ) — কোনো পেনাল্টি না, চুপচাপ মোডাল বন্ধ
-// ব্যতিক্রম: Direct Link মোডে লিংক ওপেন করার সময় ট্যাব সুইচ হওয়াটাই প্রত্যাশিত, তাই তখন মোডাল বন্ধ হবে না
-function handleEarlyExit(){
-  if(!VSTATE.active)return;
-  if(VSTATE.mode==='direct'&&VSTATE.awaitingReturn)return;
-  VSTATE.leftEarly=true;
-  clearInterval(VSTATE.adTimerId);clearInterval(VSTATE.verifyTimerId);
-  document.getElementById('verify-modal').classList.remove('show');
-  document.body.style.overflow='';
-  VSTATE.active=false;VSTATE.vidKey=null;VSTATE.awaitingReturn=false;
+// ইউজার সম্পূর্ণ সময় অপেক্ষা না করে ফিরে এলে (ব্যাক বাটন / ট্যাব সুইচ থেকে আগেই ফিরে আসা) —
+// আসল সময় (wall-clock) মেপে দেখা হয় কতটুকু অপেক্ষা করেছে, তারপর ভেরিফিকেশন-ব্যর্থ পপআপ দেখানো হয়
+function checkUnlockTaskOnReturn(){
+  if(!UTASK.active)return;
+  const elapsed=(Date.now()-UTASK.startTime)/1000;
+  if(elapsed>=UTASK.requiredSec){completeUnlockTask(UTASK.taskIndex);return;}
+  const i=UTASK.taskIndex;UTASK.active=false;
+  const btn=document.getElementById('upTaskBtn'+i);
+  if(btn){btn.classList.remove('waiting');btn.disabled=false;btn.innerText='VISIT';}
+  showVerifyFailPopup(Math.floor(elapsed),UTASK.requiredSec);
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden)handleEarlyExit();});
-window.addEventListener('pagehide',handleEarlyExit);
+function showVerifyFailPopup(watched,required){
+  document.getElementById('vfMsg').innerHTML=`আপনি সম্পূর্ণ <b>${required}</b> সেকেন্ড অ্যাড দেখেন নাই!<br>দেখেছেন <b>${watched}</b> সেঃ। আরও <b>${Math.max(0,required-watched)}</b> সেঃ প্রয়োজন।`;
+  document.getElementById('verify-fail-modal').classList.add('show');
+}
+function closeVerifyFailPopup(){document.getElementById('verify-fail-modal').classList.remove('show');}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUnlockTaskOnReturn();});
+window.addEventListener('pageshow',checkUnlockTaskOnReturn);
+window.addEventListener('focus',checkUnlockTaskOnReturn);
 
 function finishUnlock(key){
   setTaskStep(key,0);
