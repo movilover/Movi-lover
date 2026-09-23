@@ -1132,6 +1132,18 @@ const ADMIN_UIDS=['admin'];
 //  STATE
 // ════════════════════════════════════════════════════════════
 let vids=[],cats=[],catIcons={},catBanners={},pkgs={},nets={},jobs={},cfg={};
+// ভিডিও সিরিয়াল/অর্ডার অনুযায়ী সাজানোর হেল্পার — admin থেকে দেওয়া নাম্বার (order) যত বেশি,
+// সেই ভিডিও তত উপরে দেখাবে। নাম্বার না থাকলে (পুরনো ভিডিও) নতুন থেকে পুরনো (key অনুযায়ী) দেখাবে।
+function sortVids(arr){
+  return arr.sort((a,b)=>{
+    const ao=(a.order===undefined||a.order===null||a.order==='')?null:Number(a.order);
+    const bo=(b.order===undefined||b.order===null||b.order==='')?null:Number(b.order);
+    if(ao!==null&&bo!==null&&ao!==bo)return bo-ao;
+    if(ao!==null&&bo===null)return -1;
+    if(ao===null&&bo!==null)return 1;
+    return(a.key<b.key)?1:-1;
+  });
+}
 let curUser=null,isPrem=false,isDark=true;
 let curVid=null,selPkgKey=null,selWdMeth='nagad';
 let wl=[],hist=[]; // Watch Later / History — Firebase-backed for logged-in users, localStorage fallback for guests
@@ -1408,7 +1420,7 @@ function init(){
   db.ref('/').on('value',snap=>{
     const d=snap.val()||{};
     const vm=d.movies||{};vids=Object.keys(vm).map(k=>({...vm[k],key:k}));
-    if(d.movieOrder)vids.sort((a,b)=>d.movieOrder.indexOf(a.key)-d.movieOrder.indexOf(b.key));else vids.reverse();
+    sortVids(vids);
     cats=d.categories||[];catIcons=d.categoryIcons||{};catBanners=d.categoryBanners||{};
     trendKeys=d.trendingKeys||[];pkgs=d.packages||{};nets=d.adNetworks||{};jobs=d.microJobs||{};
     payLogos=d.paymentLogos||{};cfg=d;
@@ -1817,22 +1829,47 @@ function renderVerifyDots(){
   wrap.innerHTML=html;
 }
 
-function injectAdNetworkScript(netKey,zoneId){
-  const slot=document.getElementById('verifyAdSlot');if(!slot)return;
-  slot.innerHTML='';
-  if(!netKey||!zoneId)return;
-  const frame=document.createElement('iframe');
-  frame.style.cssText='width:100%;height:1px;border:none;overflow:hidden;opacity:0;position:absolute;pointer-events:none';
-  frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation');
-  slot.appendChild(frame);
-  let html='';
-  if(netKey==='monetag'){
-    html=`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><script>(function(){var s=document.createElement('script');s.async=1;s.setAttribute('data-cfasync','false');s.src='//niphauformicant.com/${zoneId}/invoke.js';document.body.appendChild(s);})();<\/script></body></html>`;
-  } else if(netKey==='gigapub'){
-    html=`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><script async src="https://giga.pub/tag.min.js" data-pub="${zoneId}"><\/script></body></html>`;
+// ★ FIX: আগে এই ফাংশনটা একটা লুকানো (1px, opacity:0, sandboxed) iframe-এর ভিতরে অ্যাড স্ক্রিপ্ট বসাতো —
+// তাই আসল অ্যাড নেটওয়ার্কের (Monetag/Gigapub) রিওয়ার্ডেড/ইন্টারস্টিশিয়াল অ্যাড কখনো ইউজারকে দেখানো যেত না।
+// এখন সরাসরি সাইটের মূল পেজে (iframe ছাড়া) অফিসিয়াল SDK লোড করে, সেটার রিয়েল অ্যাড ফাংশন কল করা হয় —
+// এতে অ্যাড সত্যিকারভাবে ইউজারের স্ক্রিনে শো হবে।
+const _adSdkLoaded={};
+function ensureAdSdkLoaded(netKey,zoneId){
+  return new Promise(resolve=>{
+    if(!zoneId){resolve(false);return;}
+    const cacheKey=netKey+'_'+zoneId;
+    if(_adSdkLoaded[cacheKey]){resolve(true);return;}
+    if(netKey==='monetag'){
+      const s=document.createElement('script');
+      s.src='https://libtl.com/sdk.js';
+      s.setAttribute('data-zone',zoneId);
+      s.setAttribute('data-sdk','show_'+zoneId);
+      s.onload=()=>{_adSdkLoaded[cacheKey]=true;resolve(true);};
+      s.onerror=()=>resolve(false);
+      document.head.appendChild(s);
+    }else if(netKey==='gigapub'){
+      const s=document.createElement('script');
+      s.async=true;s.src='https://giga.pub/tag.min.js';s.setAttribute('data-pub',zoneId);
+      s.onload=()=>{_adSdkLoaded[cacheKey]=true;resolve(true);};
+      s.onerror=()=>resolve(false);
+      document.head.appendChild(s);
+    }else resolve(false);
+  });
+}
+function triggerNetworkAd(netKey,zoneId){
+  if(netKey==='monetag'&&zoneId){
+    const fn=window['show_'+zoneId];
+    if(typeof fn==='function'){try{fn().catch(()=>{});}catch(e){}}
+  }else if(netKey==='gigapub'){
+    if(typeof window.showGiga==='function'){try{window.showGiga().catch(()=>{});}catch(e){}}
   }
-  if(!html)return;
-  setTimeout(()=>{try{const doc=frame.contentDocument||frame.contentWindow?.document;if(doc){doc.open();doc.write(html);doc.close();}}catch(e){}},80);
+}
+async function injectAdNetworkScript(netKey,zoneId){
+  const slot=document.getElementById('verifyAdSlot');if(slot)slot.innerHTML='';
+  if(!netKey||!zoneId)return;
+  await ensureAdSdkLoaded(netKey,zoneId);
+  // SDK লোড হওয়ার পরপরই তার গ্লোবাল ফাংশন রেজিস্টার হতে একটু সময় লাগে — তাই একটু অপেক্ষা করে কল করা হচ্ছে
+  setTimeout(()=>triggerNetworkAd(netKey,zoneId),300);
 }
 
 function resetAdModalToPlayingState(){
@@ -2015,8 +2052,7 @@ function finishUnlock(key){
 // ════════════════════════════════════════════════════════════
 function openSeriesPage(category){
   curSeriesCat=category;
-  let list=vids.filter(v=>v.category===category);
-  if(cfg.movieOrder)list.sort((a,b)=>cfg.movieOrder.indexOf(a.key)-cfg.movieOrder.indexOf(b.key));
+  let list=sortVids(vids.filter(v=>v.category===category));
   if(!list.length){toast('কোনো পর্ব নেই');return;}
   document.getElementById('spTtl').innerText=category;
   document.getElementById('seriesPage').classList.add('show');
@@ -2077,8 +2113,7 @@ function renderSeriesBody(v){
 }
 function renderSeriesEpisodeList(){
   if(!curSeriesCat)return;
-  let list=vids.filter(v=>v.category===curSeriesCat);
-  if(cfg.movieOrder)list.sort((a,b)=>cfg.movieOrder.indexOf(a.key)-cfg.movieOrder.indexOf(b.key));
+  let list=sortVids(vids.filter(v=>v.category===curSeriesCat));
   const cEl=document.getElementById('spEpCount');if(cEl)cEl.innerText=list.length+' পর্ব';
   const wrap=document.getElementById('spEpList');if(!wrap)return;
   wrap.innerHTML=list.map((v,i)=>{
