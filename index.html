@@ -1269,17 +1269,18 @@ function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   if(!iframeEl)return;
   iframeEl.onload=null;iframeEl.onerror=null;
   // ★ FAILOVER: Cloudinary বন্ধ থাকলে (Admin Panel থেকে গ্লোবাল মোড 'telegram' করা থাকলে)
-  // এবং এই ভিডিওর জন্য Telegram লিংক থাকলে — ইনলাইন প্লেয়ারের বদলে "Watch Now" বাটন দেখানো হয়,
-  // যেটাতে ক্লিক করলে Telegram-এ ভিডিওটা ওপেন হয়।
-  if(cfg.videoDelivery?.mode==='telegram'&&curVid&&curVid.telegramLink){
+  // এবং এই ভিডিওর জন্য Telegram ফাইল থাকলে — ইনলাইন প্লেয়ারের বদলে "Watch Now" বাটন দেখানো হয়,
+  // যেটাতে ক্লিক করলে বট-সার্ভার থেকে এককালীন unlock-token নিয়ে সরাসরি Telegram বটে রিডাইরেক্ট করে
+  // (protect_content সহ ভিডিও পাঠায়, ২৪ ঘণ্টা পর অটো-ডিলিট হয়ে যায়)।
+  if(cfg.videoDelivery?.mode==='telegram'&&curVid&&curVid.telegramFileId){
     stopDirectVideo(iframeEl);iframeEl.style.display='none';
     const holder=iframeEl.parentNode;
     let btn=document.getElementById(iframeEl.id+'_tgbtn');
     if(!btn&&holder){
       btn=document.createElement('div');btn.id=iframeEl.id+'_tgbtn';
       btn.style.cssText='width:100%;height:100%;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#000;color:#fff;cursor:pointer';
-      btn.innerHTML='<i class="fa fa-paper-plane" style="font-size:34px;color:#29a9eb"></i><div style="font-weight:800;font-size:14px">Watch Now (Telegram)</div><div style="font-size:10px;color:#888">ভিডিওটি Telegram-এ ওপেন হবে</div>';
-      btn.onclick=()=>window.open(curVid.telegramLink,'_blank');
+      btn.innerHTML='<i class="fa fa-paper-plane" style="font-size:34px;color:#29a9eb"></i><div style="font-weight:800;font-size:14px">Watch Now (Telegram)</div><div style="font-size:10px;color:#888">ভিডিওটি Telegram বটে ওপেন হবে</div>';
+      btn.onclick=()=>openTelegramDeepLink(curVid.key);
       holder.insertBefore(btn,iframeEl.nextSibling);
     }
     if(btn)btn.style.display='flex';
@@ -1308,6 +1309,25 @@ function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   };
   iframeEl.src='about:blank';
   requestAnimationFrame(()=>{ iframeEl.src=embedUrl; });
+}
+// ★ NEW: Telegram ফলব্যাক মোডে "Watch Now" ক্লিক করলে — বট-সার্ভার থেকে এককালীন unlock-token
+// এনে সরাসরি Telegram বটে (deep-link দিয়ে) রিডাইরেক্ট করা হয়। সার্ভারই যাচাই করে যে ইউজার
+// আসলেই অ্যাড-টাস্ক শেষ করে ভিডিওটা আনলক করেছে কিনা (users/{uid}/unlockedVideos/{key})।
+async function openTelegramDeepLink(videoKey){
+  const relayUrl=cfg.videoDelivery?.relayUrl;
+  if(!relayUrl){toast('❌ Telegram সার্ভার এখনো কনফিগার করা হয়নি — অ্যাডমিনকে জানান');return;}
+  const uid=curUid();
+  if(!uid){toast('❌ লগইন করুন');return;}
+  toast('⏳ Telegram লিংক তৈরি হচ্ছে...');
+  try{
+    const r=await fetch(relayUrl+'/api/unlock-token/'+videoKey,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({uid})
+    });
+    const data=await r.json();
+    if(!data.ok){toast('❌ '+data.error);return;}
+    location.href=data.deepLink;
+  }catch(e){toast('❌ সার্ভারে পৌঁছানো যায়নি, আবার চেষ্টা করুন');}
 }
 function togglePlayerFullscreen(iframeId){
   const dv=document.getElementById(iframeId+'_vid');
