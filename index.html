@@ -1222,10 +1222,10 @@ function setFrameStatus(which,mode,msg){
     if(txtEl)txtEl.innerHTML=`<i class="fa fa-triangle-exclamation pfs-err-icon" style="display:block;margin-bottom:8px"></i>${msg||'এই ভিডিওটি এখন পাওয়া যাচ্ছে না, একটু পরে চেষ্টা করুন'}`;
   }
 }
-// ── সরাসরি ভিডিও ফাইল (Cloudinary .mp4 ইত্যাদি) হলে আসল <video> প্লেয়ার, না হলে আগের মতো iframe ──
+// ── সরাসরি ভিডিও ফাইল লিংক (পুরনো/লিগ্যাসি এন্ট্রির জন্য) হলে আসল <video> প্লেয়ার, না হলে আগের মতো iframe ──
 function isDirectVideoUrl(u){
   if(!u)return false;
-  return /\.(mp4|m4v|webm|ogv|mov)(\?[^#]*)?(#.*)?$/i.test(u)||/res\.cloudinary\.com\/[^\/]+\/video\/upload\//i.test(u);
+  return /\.(mp4|m4v|webm|ogv|mov)(\?[^#]*)?(#.*)?$/i.test(u);
 }
 function getDirectVideoEl(iframeEl,create){
   const id=iframeEl.id+'_vid';let v=document.getElementById(id);
@@ -1268,11 +1268,11 @@ function playDirectVideo(iframeEl,which,url){
 function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
   if(!iframeEl)return;
   iframeEl.onload=null;iframeEl.onerror=null;
-  // ★ FAILOVER: Cloudinary বন্ধ থাকলে (Admin Panel থেকে গ্লোবাল মোড 'telegram' করা থাকলে)
-  // এবং এই ভিডিওর জন্য Telegram ফাইল থাকলে — ইনলাইন প্লেয়ারের বদলে "Watch Now" বাটন দেখানো হয়,
-  // যেটাতে ক্লিক করলে বট-সার্ভার থেকে এককালীন unlock-token নিয়ে সরাসরি Telegram বটে রিডাইরেক্ট করে
-  // (protect_content সহ ভিডিও পাঠায়, ২৪ ঘণ্টা পর অটো-ডিলিট হয়ে যায়)।
-  if(cfg.videoDelivery?.mode==='telegram'&&curVid&&curVid.telegramFileId){
+  // ★ Telegram বট-ই এখন ভিডিও ডেলিভারির একমাত্র মাধ্যম — এই ভিডিওর জন্য Telegram ফাইল থাকলে
+  // ইনলাইন প্লেয়ারের বদলে "Watch Now" বাটন দেখানো হয়, যেটাতে ক্লিক করলে বট-সার্ভার থেকে
+  // এককালীন unlock-token নিয়ে সরাসরি Telegram বটে রিডাইরেক্ট করে (protect_content সহ ভিডিও
+  // পাঠায়, ২৪ ঘণ্টা পর অটো-ডিলিট হয়ে যায়)।
+  if(curVid&&curVid.telegramFileId){
     stopDirectVideo(iframeEl);iframeEl.style.display='none';
     const holder=iframeEl.parentNode;
     let btn=document.getElementById(iframeEl.id+'_tgbtn');
@@ -1314,7 +1314,7 @@ function wireFramePlayer(iframeEl,which,embedUrl,onRetry){
 // এনে সরাসরি Telegram বটে (deep-link দিয়ে) রিডাইরেক্ট করা হয়। সার্ভারই যাচাই করে যে ইউজার
 // আসলেই অ্যাড-টাস্ক শেষ করে ভিডিওটা আনলক করেছে কিনা (users/{uid}/unlockedVideos/{key})।
 async function openTelegramDeepLink(videoKey){
-  const relayUrl=cfg.videoDelivery?.relayUrl;
+  const relayUrl=cfg.botServerConfig?.relayUrl;
   if(!relayUrl){toast('❌ Telegram সার্ভার এখনো কনফিগার করা হয়নি — অ্যাডমিনকে জানান');return;}
   const uid=curUid();
   if(!uid){toast('❌ লগইন করুন');return;}
